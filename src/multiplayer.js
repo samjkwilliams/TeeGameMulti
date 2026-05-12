@@ -410,7 +410,6 @@
       }
     }
   }
-  }
 
   function cleanupSubscriptions() {
     if (roomChannel) {
