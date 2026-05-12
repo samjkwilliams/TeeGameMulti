@@ -632,7 +632,7 @@
     if (!reactTrayEl || !reactBtnEl || !hudEl) return;
     const btnRect = reactBtnEl.getBoundingClientRect();
     const hudRect = hudEl.getBoundingClientRect();
-    reactTrayEl.style.top = (btnRect.bottom - hudRect.top + 8) + "px";
+    reactTrayEl.style.top = (btnRect.top - hudRect.top - reactTrayEl.offsetHeight - 8) + "px";
     reactTrayEl.style.left = (btnRect.left - hudRect.left + btnRect.width / 2 - reactTrayEl.offsetWidth / 2) + "px";
   }
 
