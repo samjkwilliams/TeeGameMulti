@@ -751,8 +751,9 @@ const HOLES = [
     if (!isMultiplayerActive() || isMultiplayerActive() && window.TeeMultiplayer.isLocalTurn()) return;
     opponentAimData = event.detail;
     opponentAiming = true;
+    // Keep aim data alive for ~800ms between updates before fading guide
     clearTimeout(opponentAimData._timeout);
-    opponentAimData._timeout = setTimeout(() => { opponentAimData = null; opponentAimGuide = []; opponentAiming = false; }, 600);
+    opponentAimData._timeout = setTimeout(() => { opponentAimData = null; opponentAimGuide = []; }, 800);
 
     const aim = opponentAimData;
     if (aim && aim.preview) {
@@ -2455,7 +2456,6 @@ const HOLES = [
     if (isMultiplayerActive() && window.TeeMultiplayer.isLocalTurn()) {
       opponentAimData = null;
       opponentAimGuide = [];
-      opponentAiming = false;
       return;
     }
 
