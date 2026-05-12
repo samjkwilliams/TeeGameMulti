@@ -11,7 +11,7 @@
   const ROOM_CODE_LENGTH = 5;
   const MAX_CODE_ATTEMPTS = 8;
   const LIVE_AIM_INTERVAL = 66; // ~15 updates/sec throttle
-  const MATCH_LENGTH = 3;
+  const MATCH_LENGTH = 6;
   const COURSE_PAR = 3;
 
   let supabase = null;
@@ -136,7 +136,7 @@
   function makeInitialState(hostId, hostName) {
     return {
       matchLength: MATCH_LENGTH,
-      holes: [0, 1, 2],
+      holes: [0, 1, 2, 3, 4, 5],
       par: COURSE_PAR,
       coinToss: { winnerId: null, seed: null, completedAt: null },
       players: {
@@ -394,12 +394,22 @@
       status: newStatus,
       activePlayerId,
       holeIndex,
-      turnNumber: newData.turn_number
+      turnNumber
     });
 
     if (newData.latest_shot && !shotSubmitted) {
       emitEvent("multiplayer-remote-shot-settled", newData.latest_shot);
     }
+
+    // Host checks if both players holed — advance hole
+    if (mode === "host" && roomState) {
+      const players = roomState.players || {};
+      const ids = Object.keys(players);
+      if (ids.length === 2 && ids.every(id => players[id]?.holed)) {
+        setTimeout(() => advanceToNextHole(), 1200);
+      }
+    }
+  }
   }
 
   function cleanupSubscriptions() {

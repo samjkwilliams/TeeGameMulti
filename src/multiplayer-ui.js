@@ -7,7 +7,7 @@
   "use strict";
 
   const MP = window.TeeMultiplayer;
-  const MATCH_LENGTH = 3;
+  const MATCH_LENGTH = 6;
   const COURSE_PAR = 3;
 
   // ---------- DOM Creation ----------
