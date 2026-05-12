@@ -589,6 +589,7 @@ const HOLES = [
   let opponentSwingTimer = 0;
   let opponentSwingFrame = -1;
   let opponentAiming = false;
+  let lastKnownActiveId = null;
 
   // ---- Multiplayer helpers ----
 
@@ -842,10 +843,15 @@ const HOLES = [
     if (!isMultiplayerActive()) return;
     const mp = window.TeeMultiplayer;
 
-    opponentSwingFrame = -1;
-    opponentAimData = null;
-    opponentAimGuide = [];
-    opponentAiming = false;
+    // Only reset opponent state when active player actually changes
+    const currentActiveId = mp.getActivePlayerId();
+    if (currentActiveId !== lastKnownActiveId) {
+      lastKnownActiveId = currentActiveId;
+      opponentSwingFrame = -1;
+      opponentAimData = null;
+      opponentAimGuide = [];
+      opponentAiming = false;
+    }
 
     const localPlayer = mp.getLocalPlayerState();
     const opponent = mp.getOpponentPlayerState();
@@ -2453,11 +2459,7 @@ const HOLES = [
 
   function drawOpponentAim() {
     if (!opponentAimData || !opponentAimData.pointer) return;
-    if (isMultiplayerActive() && window.TeeMultiplayer.isLocalTurn()) {
-      opponentAimData = null;
-      opponentAimGuide = [];
-      return;
-    }
+    if (isMultiplayerActive() && window.TeeMultiplayer.isLocalTurn()) return;
 
     const aim = opponentAimData;
     if (!aim.ball) return;
