@@ -587,7 +587,8 @@ const HOLES = [
   let opponentAimData = null;
   let opponentAimGuide = [];
   let opponentSwingTimer = 0;
-  let opponentSwingFrame = 0;
+  let opponentSwingFrame = -1;
+  let opponentAiming = false;
 
   // ---- Multiplayer helpers ----
 
@@ -722,6 +723,7 @@ const HOLES = [
     opponentSwingFrame = -1;
     opponentAimData = null;
     opponentAimGuide = [];
+    opponentAiming = false;
 
     // Apply opponent's final ball state
     applyBallState(world.ball, detail.ball);
@@ -748,8 +750,9 @@ const HOLES = [
   window.addEventListener("tee:opponent-aim-update", (event) => {
     if (!isMultiplayerActive() || isMultiplayerActive() && window.TeeMultiplayer.isLocalTurn()) return;
     opponentAimData = event.detail;
+    opponentAiming = true;
     clearTimeout(opponentAimData._timeout);
-    opponentAimData._timeout = setTimeout(() => { opponentAimData = null; opponentAimGuide = []; }, 500);
+    opponentAimData._timeout = setTimeout(() => { opponentAimData = null; opponentAimGuide = []; opponentAiming = false; }, 600);
 
     const aim = opponentAimData;
     if (aim && aim.preview) {
@@ -829,6 +832,7 @@ const HOLES = [
     opponentSwingFrame = 0;
     opponentAimData = null;
     opponentAimGuide = [];
+    opponentAiming = false;
 
     world.player.direction = detail.launch.vx >= 0 ? 1 : -1;
   });
@@ -840,6 +844,7 @@ const HOLES = [
     opponentSwingFrame = -1;
     opponentAimData = null;
     opponentAimGuide = [];
+    opponentAiming = false;
 
     const localPlayer = mp.getLocalPlayerState();
     const opponent = mp.getOpponentPlayerState();
@@ -2447,9 +2452,10 @@ const HOLES = [
 
   function drawOpponentAim() {
     if (!opponentAimData || !opponentAimData.pointer) return;
-    if (!isMultiplayerActive() || (isMultiplayerActive() && window.TeeMultiplayer.isLocalTurn())) {
+    if (isMultiplayerActive() && window.TeeMultiplayer.isLocalTurn()) {
       opponentAimData = null;
       opponentAimGuide = [];
+      opponentAiming = false;
       return;
     }
 
@@ -2491,7 +2497,7 @@ const HOLES = [
     const isOppTurn = isMultiplayerActive() && !window.TeeMultiplayer.isLocalTurn();
     
     // Player is only drawn if they are visible (ball asleep, or animating swing)
-    if (!world.ball.asleep && !p.animating && !(isOppTurn && opponentSwingFrame >= 0)) return;
+    if (!world.ball.asleep && !p.animating && !(isOppTurn && (opponentSwingFrame >= 0 || opponentAiming))) return;
 
     const outfitIndex = Math.min(currentHoleIndex, OUTFIT_SETS.length - 1);
     const outfit = assets.outfits[outfitIndex];
@@ -2505,16 +2511,14 @@ const HOLES = [
     
     if (isOppTurn && opponentSwingFrame >= 0) {
       // Opponent swing animation
-      const oppIsPutt = opponentAimData?.preview?.mode === "putt" || isPuttLie(world.ball);
+      const oppIsPutt = isPutt;
       playerAsset = oppIsPutt ? outfit.putt : outfit.swing;
       frameIndex = opponentSwingFrame;
-    } else if (isOppTurn && opponentAimData) {
-      // Opponent aiming stance
-      const oppIsPutt = opponentAimData?.preview?.mode === "putt" || isPuttLie(world.ball);
+    } else if (isOppTurn && opponentAiming) {
+      // Opponent aiming stance — show a static mid-aim pose
+      const oppIsPutt = isPutt;
       playerAsset = oppIsPutt ? outfit.putt : outfit.swing;
-      const AIM_FPS = 8;
-      const AIM_MAX_FRAME = oppIsPutt ? 2 : 3;
-      frameIndex = Math.min(Math.floor(opponentAimData.updatedAt ? (performance.now() - opponentAimData.updatedAt) / 1000 * AIM_FPS : 0), AIM_MAX_FRAME);
+      frameIndex = oppIsPutt ? 1 : 2;
     } else if (p.animating) {
       // Swing animation
       playerAsset = isPutt ? outfit.putt : outfit.swing;
