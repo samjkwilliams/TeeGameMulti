@@ -345,6 +345,18 @@
         world.holeTransitionShown = false;
       }
       world.strokes = currentTurn === "player" ? playerHoleStrokes : opponentHoleStrokes;
+
+      // Position player sprite at ball when it's the player's turn
+      if (currentTurn === "player") {
+        world.player.x = world.ball.x;
+        world.player.y = world.ball.y;
+        world.player.animating = false;
+        world.player.aiming = false;
+        world.player.timer = 0;
+        world.player.frame = 0;
+        world.player.pendingLaunch = null;
+        world.cameraMode = "settled";
+      }
     }
 
     botHasShotThisTurn = false;

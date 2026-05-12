@@ -1416,13 +1416,15 @@ const HOLES = [
     world.cameraMode = "settled";
     
     if (wasMoving) {
-      world.player.x = ball.x;
-      world.player.y = ball.y;
-      world.player.animating = false;
-      world.player.timer = 0;
-      world.player.frame = 0;
-      world.player.idleTimer = 0;
-      world.player.pendingLaunch = null;
+      if (!isBotMatchActive() || window.TeeBotMatch.isLocalTurn()) {
+        world.player.x = ball.x;
+        world.player.y = ball.y;
+        world.player.animating = false;
+        world.player.timer = 0;
+        world.player.frame = 0;
+        world.player.idleTimer = 0;
+        world.player.pendingLaunch = null;
+      }
     }
 
     if (triggerWheel && wasMoving && !world.holed) {
