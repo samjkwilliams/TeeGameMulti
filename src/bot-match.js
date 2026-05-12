@@ -66,6 +66,8 @@
   let botHasShotThisTurn = false;
   let reactionCooldown = 0;
   let lastReactionContext = null;
+  let playerBallState = null;
+  let opponentBallState = null;
 
   // --- UI Elements ---
 
@@ -264,6 +266,8 @@
     opponentHoleStrokes = 0;
     playerHoled = false;
     opponentHoled = false;
+    playerBallState = null;
+    opponentBallState = null;
     currentTurn = "player";
     botPlanningTimer = 0;
     botShotDelay = 0;
@@ -307,33 +311,50 @@
   function switchTurn() {
     if (!matchState.active) return;
 
-    if (currentTurn === "player") {
-      playerHoleStrokes = getWorld() ? getWorld().strokes : playerHoleStrokes;
-    } else {
-      opponentHoleStrokes = getWorld() ? getWorld().strokes : opponentHoleStrokes;
+    // Save current player's ball state
+    const world = getWorld();
+    if (world && world.ball) {
+      const b = world.ball;
+      const state = { x: b.x, y: b.y };
+      if (currentTurn === "player") {
+        playerBallState = state;
+        playerHoleStrokes = world.strokes;
+      } else {
+        opponentBallState = state;
+        opponentHoleStrokes = world.strokes;
+      }
     }
 
     currentTurn = currentTurn === "player" ? "opponent" : "player";
-    botHasShotThisTurn = false;
 
-    if (currentTurn === "opponent") {
-      opponentHoleStrokes = 0;
-    } else {
-      playerHoleStrokes = 0;
-    }
-
-    const world = getWorld();
-    if (world) {
+    // Restore incoming player's ball state (or default to tee)
+    const incomingState = currentTurn === "player" ? playerBallState : opponentBallState;
+    if (world && world.ball) {
+      if (incomingState) {
+        const b = world.ball;
+        b.x = incomingState.x;
+        b.y = incomingState.y;
+        b.vx = 0; b.vy = 0; b.omega = 0;
+        b.angle = 0; b.grounded = true; b.asleep = true;
+        b.slipping = false; b.bounceCount = 0;
+        const tg = window.TeeGame;
+        if (tg) b.y = tg.terrainHeight(b.x) + 0.31;
+        world.cameraMode = "settled";
+        world.holed = false;
+        world.holeSinkTimer = 0;
+        world.holeTransitionShown = false;
+      }
       world.strokes = currentTurn === "player" ? playerHoleStrokes : opponentHoleStrokes;
     }
 
+    botHasShotThisTurn = false;
     updateMatchHUD();
     updateBotStatus();
 
     if (currentTurn === "opponent" && !opponentHoled) {
       scheduleBotShot();
     } else if (currentTurn === "player" && !playerHoled) {
-      botStatusEl.textContent = "";
+      if (botStatusEl) botStatusEl.textContent = "";
     }
   }
 
@@ -798,7 +819,6 @@
 
     updateMatchHUD();
     switchTurn();
-    resetBallForTurn();
   }
 
   function handleHoleComplete() {
@@ -831,6 +851,8 @@
     opponentHoleStrokes = 0;
     playerHoled = false;
     opponentHoled = false;
+    playerBallState = null;
+    opponentBallState = null;
     holeIndex++;
 
     if (holeIndex >= MATCH_LENGTH) {
@@ -858,7 +880,6 @@
       advanceHole();
     } else {
       switchTurn();
-      resetBallForTurn();
     }
   }
 
