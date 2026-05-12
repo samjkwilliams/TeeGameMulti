@@ -810,6 +810,15 @@ const HOLES = [
   });
 
   window.addEventListener("tee:opponent-shot-start", (event) => {
+    if (isBotMatchActive()) {
+      opponentSwingTimer = 0;
+      opponentSwingFrame = 0;
+      opponentAimData = null;
+      opponentAimGuide = [];
+      opponentAiming = false;
+      return;
+    }
+
     if (!isMultiplayerActive()) return;
     const detail = event.detail;
     if (!detail || !detail.launch) return;

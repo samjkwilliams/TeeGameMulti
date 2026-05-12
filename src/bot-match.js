@@ -870,6 +870,15 @@
     }
 
     updateMatchHUD();
+
+    // Delay opponent turn switch to let swing animation play (9 frames / 18 fps ≈ 500ms)
+    if (currentTurn === "opponent" && !holed) {
+      setTimeout(() => {
+        if (!matchState.active || currentTurn !== "opponent") return;
+        switchTurn();
+      }, 550);
+      return;
+    }
     switchTurn();
   }
 
