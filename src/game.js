@@ -585,6 +585,9 @@ const HOLES = [
   let resizeQueued = true;
   let multiplayerShotPending = false;
   let opponentAimData = null;
+  let opponentAimGuide = [];
+  let opponentSwingTimer = 0;
+  let opponentSwingFrame = 0;
 
   // ---- Multiplayer helpers ----
 
@@ -741,9 +744,50 @@ const HOLES = [
   window.addEventListener("tee:opponent-aim-update", (event) => {
     if (!isMultiplayerActive() || isMultiplayerActive() && window.TeeMultiplayer.isLocalTurn()) return;
     opponentAimData = event.detail;
-    // Clear stale aim data
     clearTimeout(opponentAimData._timeout);
-    opponentAimData._timeout = setTimeout(() => { opponentAimData = null; }, 300);
+    opponentAimData._timeout = setTimeout(() => { opponentAimData = null; opponentAimGuide = []; }, 300);
+
+    const aim = opponentAimData;
+    if (aim && aim.preview) {
+      // Update player direction from aim
+      if (aim.preview.launch) {
+        world.player.direction = aim.preview.launch.vx >= 0 ? 1 : -1;
+      }
+    }
+
+    // Compute guide path from opponent's launch data
+    if (aim && aim.preview && aim.ball) {
+      const ghost = {
+        x: aim.ball.x,
+        y: aim.ball.y,
+        vx: aim.preview.launch.vx,
+        vy: aim.preview.launch.vy,
+        omega: aim.preview.launch.omega,
+        angle: 0,
+        slipping: aim.preview.mode !== "putt",
+        grounded: aim.preview.mode === "putt",
+        asleep: false
+      };
+      opponentAimGuide = [];
+      let bounces = 0;
+      for (let i = 0; i < 180; i++) {
+        if (aim.preview.mode === "putt") {
+          stepGroundedGhost(ghost, 1 / 60);
+        } else if (!ghost.grounded) {
+          stepAir(ghost, 1 / 60);
+          resolveGhostCollision(ghost);
+          if (ghost.grounded) bounces += 1;
+        } else {
+          stepGroundedGhost(ghost, 1 / 60);
+        }
+        if (i % 5 === 0) {
+          opponentAimGuide.push({ x: ghost.x, y: ghost.y, grounded: ghost.grounded });
+        }
+        if (ghost.grounded && Math.abs(groundSpeed(ghost)) < 0.35) break;
+        if (bounces > 2 && i > 80) break;
+        if (ghost.x < -70 || ghost.x > COURSE.endX + 65 || ghost.y < -20) break;
+      }
+    }
   });
 
   window.addEventListener("tee:opponent-shot-start", (event) => {
@@ -773,6 +817,13 @@ const HOLES = [
       AUDIO.putt.currentTime = 0;
       AUDIO.putt.play().catch(() => {});
     }
+
+    opponentSwingTimer = 0;
+    opponentSwingFrame = 0;
+    opponentAimData = null;
+    opponentAimGuide = [];
+
+    world.player.direction = detail.launch.vx >= 0 ? 1 : -1;
   });
 
   function loadMultiplayerStateIntoWorld() {
@@ -1196,6 +1247,13 @@ const HOLES = [
     } else {
       // If not animating or aiming, advance the idle timer
       world.player.idleTimer += dt;
+    }
+
+    // Advance opponent swing animation
+    if (opponentSwingFrame >= 0 && opponentSwingFrame < 10) {
+      opponentSwingTimer += dt;
+      const oppFPS = 18;
+      opponentSwingFrame = Math.min(Math.floor(opponentSwingTimer * oppFPS), 9);
     }
 
     if (!world.holed) {
@@ -2377,6 +2435,7 @@ const HOLES = [
     if (!opponentAimData || !opponentAimData.pointer) return;
     if (!isMultiplayerActive() || (isMultiplayerActive() && window.TeeMultiplayer.isLocalTurn())) {
       opponentAimData = null;
+      opponentAimGuide = [];
       return;
     }
 
@@ -2385,24 +2444,40 @@ const HOLES = [
 
     const ballScreen = worldToScreen(aim.ball.x, aim.ball.y);
 
+    // Draw draf line from ball to pointer
     ctx.save();
-    ctx.globalAlpha = 0.35;
-    ctx.strokeStyle = "rgb(255 138 101 / 0.85)";
-    ctx.lineWidth = 2.2;
-    ctx.setLineDash([4, 8]);
+    ctx.globalAlpha = 0.4;
+    ctx.strokeStyle = "rgb(255 138 101 / 0.9)";
+    ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(ballScreen.x, ballScreen.y);
     ctx.lineTo(aim.pointer.x, aim.pointer.y);
     ctx.stroke();
-    ctx.setLineDash([]);
+
+    // Draw opponent's guide arc
+    if (opponentAimGuide.length > 1) {
+      ctx.globalAlpha = 0.3;
+      ctx.setLineDash([4, 6]);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i < opponentAimGuide.length; i++) {
+        const s = worldToScreen(opponentAimGuide[i].x, opponentAimGuide[i].y);
+        if (i === 0) ctx.moveTo(s.x, s.y);
+        else ctx.lineTo(s.x, s.y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
     ctx.restore();
   }
 
   function drawPlayer() {
     const p = world.player;
+    const isOppTurn = isMultiplayerActive() && !window.TeeMultiplayer.isLocalTurn();
     
     // Player is only drawn if they are visible (ball asleep, or animating swing)
-    if (!world.ball.asleep && !p.animating) return;
+    if (!world.ball.asleep && !p.animating && !(isOppTurn && opponentSwingFrame > 0)) return;
 
     const outfitIndex = Math.min(currentHoleIndex, OUTFIT_SETS.length - 1);
     const outfit = assets.outfits[outfitIndex];
@@ -2414,7 +2489,19 @@ const HOLES = [
     let playerAsset;
     let frameIndex;
     
-    if (p.animating) {
+    if (isOppTurn && opponentSwingFrame > 0) {
+      // Opponent swing animation
+      const oppIsPutt = opponentAimData?.preview?.mode === "putt" || isPuttLie(world.ball);
+      playerAsset = oppIsPutt ? outfit.putt : outfit.swing;
+      frameIndex = opponentSwingFrame;
+    } else if (isOppTurn && opponentAimData) {
+      // Opponent aiming stance
+      const oppIsPutt = opponentAimData?.preview?.mode === "putt" || isPuttLie(world.ball);
+      playerAsset = oppIsPutt ? outfit.putt : outfit.swing;
+      const AIM_FPS = 8;
+      const AIM_MAX_FRAME = oppIsPutt ? 2 : 3;
+      frameIndex = Math.min(Math.floor(opponentAimData.updatedAt ? (performance.now() - opponentAimData.updatedAt) / 1000 * AIM_FPS : 0), AIM_MAX_FRAME);
+    } else if (p.animating) {
       // Swing animation
       playerAsset = isPutt ? outfit.putt : outfit.swing;
       frameIndex = p.frame;
@@ -2663,6 +2750,22 @@ const HOLES = [
       guide.forEach((g, i) => {
         const px = x0 + (g.x - mapStart) * xScale;
           const py = y0 + mapH - (g.y - minY) * yScale;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Opponent aim guide on minimap
+    if (opponentAimGuide.length > 1) {
+      ctx.strokeStyle = "rgb(255 138 101 / 0.7)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([2, 4]);
+      ctx.beginPath();
+      opponentAimGuide.forEach((g, i) => {
+        const px = x0 + (g.x - mapStart) * xScale;
+        const py = y0 + mapH - (g.y - minY) * yScale;
         if (i === 0) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
       });
