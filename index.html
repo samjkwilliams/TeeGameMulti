@@ -4,14 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Side Tee Physics Prototype</title>
-    <link rel="stylesheet" href="styles.css?v=11">
+    <link rel="stylesheet" href="styles.css?v=12">
   </head>
   <body class="phone">
     <div class="game-wrapper">
       <img class="brand-logo" src="tee-game-logo.svg" alt="Tee Game">
       <div class="hole-nav" aria-label="Hole navigation">
-        <button type="button" data-hole-prev aria-label="Previous hole">‹</button>
-        <span class="hole-count" data-hole-counter>1/9</span>
         <button type="button" data-hole-next aria-label="Next hole">›</button>
       </div>
       <canvas id="sky" aria-hidden="true"></canvas>
@@ -144,12 +142,6 @@
         <div class="mp-panel mp-match-panel"></div>
       </div>
       <div class="mp-error-toast" id="mp-error-toast"></div>
-    </div>
-    <div class="testing-tools" aria-label="Testing tools">
-      <button type="button" data-aspect="auto">Auto</button>
-      <button type="button" data-aspect="phone" class="active">Phone</button>
-      <button type="button" data-aspect="four-five">4:5</button>
-      <button type="button" data-aspect="desktop">Wide</button>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="src/supabase-config.js?v=2"></script>
