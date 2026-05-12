@@ -751,7 +751,7 @@ const HOLES = [
     const detail = event.detail;
     if (!detail || !detail.launch) return;
 
-    // Apply opponent's shot launch to world.ball for visual simulation
+    world.strokes = detail.strokeNumber || 0;
     world.ball.asleep = false;
     world.ball.grounded = detail.mode === "putt";
     world.ball.vx = detail.launch.vx;

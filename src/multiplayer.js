@@ -595,7 +595,7 @@
 
     // Resolve who goes first on next hole
     const tossWinner = updatedState.coinToss?.winnerId;
-    const firstForHole = nextHoleIndex % 2 === 0 ? tossWinner : (Object.keys(updatedState.players).find(id => id !== tossWinner));
+    const firstForHole = nextHoleIdx % 2 === 0 ? tossWinner : (Object.keys(updatedState.players).find(id => id !== tossWinner));
 
     const { error } = await supabase
       .from("tee_rooms")
