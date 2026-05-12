@@ -375,6 +375,12 @@
       }
     });
 
+    channel.on("broadcast", { event: "emoji_reaction" }, (payload) => {
+      if (payload.payload) {
+        emitEvent("multiplayer-emoji-reaction", payload.payload);
+      }
+    });
+
     channel.subscribe();
   }
 
@@ -483,6 +489,16 @@
       type: "broadcast",
       event: "shot_started",
       payload: shotData
+    });
+  }
+
+  async function submitEmojiReaction(emoji) {
+    if (!isEnabled() || !channel || !roomCode) return;
+
+    await channel.send({
+      type: "broadcast",
+      event: "emoji_reaction",
+      payload: { emoji }
     });
   }
 
@@ -704,6 +720,7 @@
     submitLiveAim,
     clearLiveAim,
     submitShotStart,
+    submitEmojiReaction,
     submitShotSettled,
     advanceToNextHole,
     getBallForPlayer,

@@ -555,9 +555,20 @@
     mr.overlay.classList.add("visible");
   }
 
-  // ---------- Compact HUD ----------
+  // ---------- Compact HUD + Reactions ----------
 
   let hudEl = null;
+  let hudCardEl = null;
+  let reactBtnEl = null;
+  let reactTrayEl = null;
+
+  const EMOJIS = [
+    { emoji: "😀", name: "happy" },
+    { emoji: "😍", name: "love" },
+    { emoji: "😂", name: "laugh" },
+    { emoji: "😮", name: "surprised" },
+    { emoji: "😡", name: "rage" }
+  ];
 
   function createHUD() {
     if (hudEl) return hudEl;
@@ -569,6 +580,100 @@
     return hudEl;
   }
 
+  function ensureReactButton() {
+    if (reactBtnEl && reactBtnEl.parentNode) return;
+    if (!hudEl) return;
+
+    reactBtnEl = createElement("button", {
+      className: "mp-react-btn",
+      innerHTML: "😊",
+      onClick: (e) => {
+        e.stopPropagation();
+        toggleReactTray();
+      }
+    });
+    hudEl.appendChild(reactBtnEl);
+  }
+
+  function ensureReactTray() {
+    if (reactTrayEl && reactTrayEl.parentNode) return;
+    if (!hudEl) return;
+
+    reactTrayEl = createElement("div", { className: "mp-react-tray" });
+
+    EMOJIS.forEach((item) => {
+      const btn = createElement("button", {
+        className: "mp-react-emoji",
+        textContent: item.emoji,
+        onClick: (e) => {
+          e.stopPropagation();
+          selectReaction(item.emoji);
+        }
+      });
+      reactTrayEl.appendChild(btn);
+    });
+
+    hudEl.appendChild(reactTrayEl);
+  }
+
+  function toggleReactTray() {
+    ensureReactTray();
+    if (!reactTrayEl) return;
+    const isOpen = reactTrayEl.classList.contains("open");
+    if (isOpen) {
+      closeReactTray();
+    } else {
+      positionReactTray();
+      reactTrayEl.classList.add("open");
+    }
+  }
+
+  function positionReactTray() {
+    if (!reactTrayEl || !reactBtnEl || !hudEl) return;
+    const btnRect = reactBtnEl.getBoundingClientRect();
+    const hudRect = hudEl.getBoundingClientRect();
+    reactTrayEl.style.top = (btnRect.bottom - hudRect.top + 8) + "px";
+    reactTrayEl.style.left = (btnRect.left - hudRect.left + btnRect.width / 2 - reactTrayEl.offsetWidth / 2) + "px";
+  }
+
+  function closeReactTray() {
+    if (reactTrayEl) {
+      reactTrayEl.classList.remove("open");
+    }
+  }
+
+  function selectReaction(emoji) {
+    closeReactTray();
+    spawnFloatingEmoji(emoji);
+    if (MP.isEnabled() && MP.submitEmojiReaction) {
+      MP.submitEmojiReaction(emoji);
+    }
+  }
+
+  function spawnFloatingEmoji(emoji) {
+    const gameWrapper = document.querySelector(".game-wrapper");
+    if (!gameWrapper || !reactBtnEl) return;
+
+    const floatEl = document.createElement("div");
+    floatEl.className = "mp-emoji-float";
+    floatEl.textContent = emoji;
+
+    const btnRect = reactBtnEl.getBoundingClientRect();
+    const wrapperRect = gameWrapper.getBoundingClientRect();
+    floatEl.style.left = (btnRect.left - wrapperRect.left + btnRect.width / 2 - 14) + "px";
+    floatEl.style.top = (btnRect.top - wrapperRect.top) + "px";
+
+    gameWrapper.appendChild(floatEl);
+
+    floatEl.addEventListener("animationend", () => {
+      if (floatEl.parentNode) floatEl.parentNode.removeChild(floatEl);
+    });
+  }
+
+  function receiveRemoteReaction(emoji) {
+    spawnFloatingEmoji(emoji);
+  }
+
   function updateHUD() {
     if (!MP.isEnabled()) {
       if (hudEl) hudEl.style.display = "none";
@@ -578,7 +683,6 @@
     const hud = createHUD();
     if (!hud) return;
     hud.style.display = "";
-    hud.innerHTML = "";
 
     const state = MP.getRoomState();
     if (!state) return;
@@ -589,41 +693,88 @@
     const isMyTurn = MP.isLocalTurn();
     const par = state.par || COURSE_PAR;
 
-    // Scoreboard row
-    const scoreboard = createElement("div", { className: "mp-scoreboard" });
+    // Remove old card content only, preserve react button and tray
+    if (hudCardEl && hudCardEl.parentNode) {
+      hudCardEl.parentNode.removeChild(hudCardEl);
+    }
 
-    const localScore = createElement("div", { className: "mp-player-score" + (isMyTurn ? " mp-active" : "") });
-    localScore.appendChild(createElement("span", { className: "mp-score-name", textContent: localPlayer?.name || "You" }));
-    localScore.appendChild(createElement("span", { className: "mp-score-strokes", textContent: (localPlayer?.currentHoleStrokes ?? 0) + "" }));
+    // Build the frosted glass card
+    hudCardEl = createElement("div", { className: "mp-hud-card" });
 
-    const vs = createElement("span", { className: "mp-vs", textContent: "vs" });
+    // --- Guest score block ---
+    const isGuest = MP.getLocalRole() === "guest";
+    const guestPlayer = isGuest ? localPlayer : opponent;
+    const guestScore = createElement("div", {
+      className: "mp-player-score" + ((isGuest && isMyTurn) || (!isGuest && !isMyTurn) ? " mp-active" : "")
+    });
+    guestScore.appendChild(createElement("span", {
+      className: "mp-score-name",
+      textContent: guestPlayer?.name || "Guest"
+    }));
+    guestScore.appendChild(createElement("span", {
+      className: "mp-score-strokes",
+      textContent: String(guestPlayer?.currentHoleStrokes ?? 0)
+    }));
+    hudCardEl.appendChild(guestScore);
 
-    const oppScore = createElement("div", { className: "mp-player-score" + (!isMyTurn ? " mp-active" : "") });
-    oppScore.appendChild(createElement("span", { className: "mp-score-name", textContent: opponent?.name || "Friend" }));
-    oppScore.appendChild(createElement("span", { className: "mp-score-strokes", textContent: (opponent?.currentHoleStrokes ?? 0) + "" }));
+    // --- VS divider ---
+    hudCardEl.appendChild(createElement("span", {
+      className: "mp-vs",
+      textContent: "vs"
+    }));
 
-    scoreboard.appendChild(localScore);
-    scoreboard.appendChild(vs);
-    scoreboard.appendChild(oppScore);
-    hud.appendChild(scoreboard);
+    // --- Host score block ---
+    const hostPlayer = isGuest ? opponent : localPlayer;
+    const hostScore = createElement("div", {
+      className: "mp-player-score" + ((!isGuest && isMyTurn) || (isGuest && !isMyTurn) ? " mp-active" : "")
+    });
+    hostScore.appendChild(createElement("span", {
+      className: "mp-score-name",
+      textContent: hostPlayer?.name || "Host"
+    }));
+    hostScore.appendChild(createElement("span", {
+      className: "mp-score-strokes",
+      textContent: String(hostPlayer?.currentHoleStrokes ?? 0)
+    }));
+    hudCardEl.appendChild(hostScore);
 
-    // Hole info
+    // --- Divider ---
+    hudCardEl.appendChild(createElement("div", { className: "mp-hud-divider" }));
+
+    // --- Hole info block ---
     const holeInfo = createElement("div", { className: "mp-hole-info" });
-    holeInfo.appendChild(createElement("span", { textContent: "Hole " + (hi + 1) + " of " + MATCH_LENGTH }));
-    holeInfo.appendChild(createElement("span", { className: "mp-dot", textContent: "·" }));
-    holeInfo.appendChild(createElement("span", { textContent: "Par " + par }));
-    hud.appendChild(holeInfo);
+    holeInfo.appendChild(createElement("span", {
+      className: "mp-hole-number",
+      textContent: "Hole " + (hi + 1) + "/" + MATCH_LENGTH
+    }));
+    holeInfo.appendChild(createElement("span", {
+      className: "mp-hole-par",
+      textContent: "Par " + par
+    }));
+    hudCardEl.appendChild(holeInfo);
 
-    // Turn indicator
+    // --- Turn pill ---
     const turnPill = createElement("div", { className: "mp-turn-pill" });
     if (isMyTurn) {
       turnPill.classList.add("mp-my-turn");
-      turnPill.textContent = "YOUR TURN";
+      turnPill.textContent = localPlayer?.name ? localPlayer.name.split(" ")[0] + " Turn" : "Your Turn";
     } else {
       turnPill.classList.add("mp-opp-turn");
-      turnPill.textContent = (opponent?.name || "FRIEND") + "'S TURN";
+      turnPill.textContent = (opponent?.name ? opponent.name.split(" ")[0] + " Turn" : "Host Turn");
     }
-    hud.appendChild(turnPill);
+    hudCardEl.appendChild(turnPill);
+
+    // Insert card before react button if it exists, otherwise append
+    if (reactBtnEl && reactBtnEl.parentNode === hud) {
+      hud.insertBefore(hudCardEl, reactBtnEl);
+    } else {
+      hud.appendChild(hudCardEl);
+    }
+
+    // Ensure react button and tray exist
+    ensureReactButton();
+    ensureReactTray();
+    positionReactTray();
   }
 
   // ---------- Error Toast ----------
@@ -642,6 +793,14 @@
       errorToast.classList.remove("visible");
     }, 3000);
   }
+
+  // --- Close tray on outside click ---
+  document.addEventListener("click", (e) => {
+    if (!reactTrayEl || !reactTrayEl.classList.contains("open")) return;
+    if (reactBtnEl && reactBtnEl.contains(e.target)) return;
+    if (reactTrayEl.contains(e.target)) return;
+    closeReactTray();
+  });
 
   // --- Status message for lobby ---
   function setLobbyStatus(msg) {
@@ -721,6 +880,12 @@
     window.dispatchEvent(new CustomEvent("tee:opponent-shot-settled", { detail: event.detail }));
   });
 
+  window.addEventListener("tee:multiplayer-emoji-reaction", (event) => {
+    if (event.detail && event.detail.emoji) {
+      receiveRemoteReaction(event.detail.emoji);
+    }
+  });
+
   window.addEventListener("tee:multiplayer-error", (event) => {
     showError(event.detail.message || "Multiplayer error");
   });
@@ -734,6 +899,7 @@
     if (matchResultOverlay) matchResultOverlay.overlay.classList.remove("visible");
     if (coinTossOverlay) coinTossOverlay.overlay.classList.remove("visible");
     if (hudEl) hudEl.style.display = "none";
+    closeReactTray();
     updateHUD();
   });
 

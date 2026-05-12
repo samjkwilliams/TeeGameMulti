@@ -2817,8 +2817,8 @@ const HOLES = [
 
   function drawTinyReadout(width, height) {
     ctx.save();
-    ctx.font = "600 12px ui-sans-serif, system-ui, sans-serif";
-    ctx.fillStyle = "rgb(20 31 29 / 0.62)";
+    ctx.font = "600 11px ui-sans-serif, system-ui, sans-serif";
+    ctx.fillStyle = "rgb(20 31 29 / 0.28)";
     const toPin = COURSE.holeX - world.ball.x;
     const lie = world.holed ? "holed" : `${Math.abs(toPin).toFixed(1)}m ${toPin < -0.3 ? "long" : "to pin"}`;
     ctx.fillText(`hole ${currentHoleIndex + 1}/${HOLES.length} · strokes ${world.strokes} · ${lie}`, 14, height - 16);

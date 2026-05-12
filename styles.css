@@ -814,97 +814,244 @@ body.desktop #game {
   color: #f0b95d;
 }
 
-/* ── Compact HUD ── */
+/* ── Compact HUD (top-left frosted glass pill) ── */
 
 .mp-hud {
   position: absolute;
   z-index: 5;
-  bottom: max(80px, calc(env(safe-area-inset-bottom) + 80px));
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 8px 16px;
-  background: rgb(17 30 36 / 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgb(255 255 255 / 0.12);
-  border-radius: 16px;
+  top: max(118px, calc(env(safe-area-inset-top) + 108px));
+  left: max(12px, env(safe-area-inset-left));
   display: flex;
   align-items: center;
-  gap: 12px;
-  white-space: nowrap;
+  gap: 8px;
   max-width: min(calc(100vw - 24px), calc(56.25vh - 24px));
 }
+
+.mp-hud-card {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 6px 6px 6px 14px;
+  background: rgb(210 228 242 / 0.42);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgb(255 255 255 / 0.32);
+  border-radius: 22px;
+  box-shadow: 0 8px 28px rgb(100 130 160 / 0.10), 0 2px 6px rgb(0 0 0 / 0.04);
+  white-space: nowrap;
+}
+
+/* ── Scoreboard Row ── */
 
 .mp-scoreboard {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .mp-player-score {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2px 10px;
-  border-radius: 8px;
-  transition: background 0.25s;
+  padding: 3px 12px;
+  border-radius: 12px;
+  transition: background 0.3s ease;
+  min-width: 40px;
 }
 
 .mp-player-score.mp-active {
-  background: rgb(240 185 93 / 0.2);
+  background: rgb(220 195 145 / 0.28);
 }
 
 .mp-score-name {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  color: rgb(255 255 255 / 0.7);
+  letter-spacing: 0.06em;
+  color: rgb(255 255 255 / 0.78);
+  text-transform: uppercase;
+  line-height: 1.2;
 }
 
 .mp-score-strokes {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 800;
   color: #fff;
+  line-height: 1;
+  text-shadow: 0 1px 4px rgb(0 0 0 / 0.06);
 }
 
 .mp-vs {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  color: rgb(255 255 255 / 0.3);
+  color: rgb(255 255 255 / 0.28);
+  letter-spacing: 0.04em;
+  margin: 0 2px;
+  text-transform: lowercase;
 }
+
+/* ── Divider ── */
+
+.mp-hud-divider {
+  width: 1px;
+  height: 28px;
+  background: rgb(255 255 255 / 0.16);
+  margin: 0 8px;
+  flex-shrink: 0;
+}
+
+/* ── Hole Info Block ── */
 
 .mp-hole-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 0 10px;
+}
+
+.mp-hole-number {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgb(255 255 255 / 0.85);
+  line-height: 1.2;
+}
+
+.mp-hole-par {
   font-size: 10px;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.5);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0 8px;
-  border-left: 1px solid rgb(255 255 255 / 0.1);
-  border-right: 1px solid rgb(255 255 255 / 0.1);
+  color: rgb(255 255 255 / 0.55);
+  letter-spacing: 0.03em;
+  line-height: 1.2;
 }
 
-.mp-dot {
-  color: rgb(255 255 255 / 0.3);
-  font-size: 14px;
-}
+/* ── Turn Pill ── */
 
 .mp-turn-pill {
-  padding: 4px 12px;
+  padding: 5px 12px;
   border-radius: 999px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
+  flex-shrink: 0;
 }
 
 .mp-my-turn {
-  background: #f0b95d;
-  color: #0f1e2e;
+  background: rgb(240 220 170 / 0.38);
+  color: rgb(50 45 30);
 }
 
 .mp-opp-turn {
-  background: rgb(255 255 255 / 0.1);
-  color: rgb(255 255 255 / 0.7);
+  background: rgb(255 255 255 / 0.12);
+  color: rgb(255 255 255 / 0.72);
+}
+
+/* ── Reaction Button ── */
+
+.mp-react-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.48);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgb(255 255 255 / 0.32);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.05), 0 1px 3px rgb(0 0 0 / 0.04);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  line-height: 1;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.mp-react-btn:active {
+  transform: scale(0.92);
+  background: rgb(255 255 255 / 0.62);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.06);
+}
+
+/* ── Emoji Reaction Tray ── */
+
+.mp-react-tray {
+  position: absolute;
+  display: flex;
+  gap: 5px;
+  padding: 8px 12px;
+  background: rgb(255 255 255 / 0.55);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgb(255 255 255 / 0.32);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.08), 0 2px 8px rgb(0 0 0 / 0.04);
+  opacity: 0;
+  transform: translateY(-6px) scale(0.94);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 6;
+}
+
+.mp-react-tray.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.mp-react-emoji {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s, transform 0.15s;
+  line-height: 1;
+}
+
+.mp-react-emoji:hover {
+  background: rgb(0 0 0 / 0.04);
+  transform: scale(1.12);
+}
+
+.mp-react-emoji:active {
+  transform: scale(0.92);
+}
+
+/* ── Floating Emoji Animation ── */
+
+.mp-emoji-float {
+  position: absolute;
+  z-index: 7;
+  font-size: 28px;
+  pointer-events: none;
+  animation: mp-emoji-float-up 1.3s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes mp-emoji-float-up {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(-8px) scale(1.05);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(-35px) scale(1.0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-120px) scale(0.55);
+  }
 }
 
 /* ── Match Result ── */
@@ -969,14 +1116,59 @@ body.desktop #game {
 
 @media (max-width: 620px) {
   .mp-hud {
-    bottom: max(60px, calc(env(safe-area-inset-bottom) + 60px));
-    padding: 6px 12px;
-    gap: 8px;
+    top: max(116px, calc(env(safe-area-inset-top) + 106px));
+    left: max(8px, env(safe-area-inset-left));
+    gap: 6px;
     max-width: min(calc(100vw - 16px), calc(56.25vh - 16px));
   }
 
+  .mp-hud-card {
+    padding: 5px 5px 5px 10px;
+    border-radius: 18px;
+  }
+
   .mp-score-strokes {
-    font-size: 15px;
+    font-size: 18px;
+  }
+
+  .mp-player-score {
+    padding: 2px 8px;
+    border-radius: 10px;
+    min-width: 32px;
+  }
+
+  .mp-hud-divider {
+    height: 22px;
+    margin: 0 5px;
+  }
+
+  .mp-hole-info {
+    padding: 0 6px;
+  }
+
+  .mp-hole-number {
+    font-size: 11px;
+  }
+
+  .mp-hole-par {
+    font-size: 9px;
+  }
+
+  .mp-turn-pill {
+    padding: 4px 10px;
+    font-size: 9px;
+  }
+
+  .mp-react-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 17px;
+  }
+
+  .mp-react-emoji {
+    width: 34px;
+    height: 34px;
+    font-size: 20px;
   }
 
   .mp-panel {
