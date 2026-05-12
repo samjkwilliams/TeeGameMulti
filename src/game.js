@@ -755,7 +755,8 @@ const HOLES = [
   });
 
   window.addEventListener("tee:opponent-aim-update", (event) => {
-    if (!isMultiplayerActive() || isMultiplayerActive() && window.TeeMultiplayer.isLocalTurn()) return;
+    if (isMultiplayerActive() && window.TeeMultiplayer.isLocalTurn()) return;
+    if (isBotMatchActive() && window.TeeBotMatch.isLocalTurn()) return;
     opponentAimData = event.detail;
     opponentAiming = true;
     // Keep aim data alive for ~800ms between updates before fading guide
@@ -2515,7 +2516,8 @@ const HOLES = [
 
   function drawOpponentAim() {
     if (!opponentAimData || !opponentAimData.pointer) return;
-    if (isMultiplayerActive() && window.TeeMultiplayer.isLocalTurn()) return;
+    if ((isMultiplayerActive() && window.TeeMultiplayer.isLocalTurn())
+      || (isBotMatchActive() && window.TeeBotMatch.isLocalTurn())) return;
 
     const aim = opponentAimData;
     if (!aim.ball) return;
@@ -2552,7 +2554,8 @@ const HOLES = [
 
   function drawPlayer() {
     const p = world.player;
-    const isOppTurn = isMultiplayerActive() && !window.TeeMultiplayer.isLocalTurn();
+    const isOppTurn = (isMultiplayerActive() && !window.TeeMultiplayer.isLocalTurn())
+      || (isBotMatchActive() && !window.TeeBotMatch.isLocalTurn());
     
     // Player is only drawn if they are visible (ball asleep, or animating swing)
     if (!world.ball.asleep && !p.animating && !(isOppTurn && (opponentSwingFrame >= 0 || opponentAiming))) return;
@@ -3301,7 +3304,10 @@ const HOLES = [
     getHoleX: () => COURSE.holeX,
     getGreenStart: () => COURSE.greenStart,
     getGreenEnd: () => COURSE.greenEnd,
-    isPuttLie: (ball) => isPuttLie(ball)
+    isPuttLie: (ball) => isPuttLie(ball),
+    setOpponentAiming: (v) => { opponentAiming = v; },
+    triggerOpponentSwing: () => { opponentSwingTimer = 0; opponentSwingFrame = 0; opponentAiming = false; opponentAimData = null; opponentAimGuide = []; },
+    getOpponentAimData: () => opponentAimData
   };
 
   // Emit frame tick for bot match update loop

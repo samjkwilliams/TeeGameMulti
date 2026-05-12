@@ -311,6 +311,17 @@
   function switchTurn() {
     if (!matchState.active) return;
 
+    // Don't switch to a player who already holed
+    const nextTurn = currentTurn === "player" ? "opponent" : "player";
+    if ((nextTurn === "player" && playerHoled) || (nextTurn === "opponent" && opponentHoled)) {
+      if (currentTurn === "opponent" && !opponentHoled) {
+        botHasShotThisTurn = false;
+        scheduleBotShot();
+      }
+      updateMatchHUD();
+      return;
+    }
+
     // Save current player's ball state
     const world = getWorld();
     if (world && world.ball) {
@@ -383,6 +394,19 @@
     botShotDelay = rand(opponent.shotDelayMin, opponent.shotDelayMax);
     botHasShotThisTurn = false;
     updateBotStatus();
+
+    // Show opponent in aiming pose
+    const world = getWorld();
+    if (world && world.ball) {
+      const launch = planBotShot(world);
+      window.dispatchEvent(new CustomEvent("tee:opponent-aim-update", {
+        detail: {
+          ball: { x: world.ball.x, y: world.ball.y },
+          pointer: null,
+          preview: launch || null
+        }
+      }));
+    }
   }
 
   function updateBotStatus() {
@@ -430,17 +454,17 @@
     // Swing: distance-to-speed table with drag compensation built in
     let targetSpeed;
     if (distance < 20) {
-      targetSpeed = distance * 0.65 + 2;
+      targetSpeed = distance * 0.85 + 3;
     } else if (distance < 80) {
-      targetSpeed = distance * 0.38 + 6;
+      targetSpeed = distance * 0.55 + 10;
     } else if (distance < 180) {
-      targetSpeed = distance * 0.30 + 12;
+      targetSpeed = distance * 0.42 + 18;
     } else if (distance < 280) {
-      targetSpeed = distance * 0.22 + 26;
+      targetSpeed = distance * 0.30 + 32;
     } else {
-      targetSpeed = distance * 0.16 + 44;
+      targetSpeed = distance * 0.20 + 52;
     }
-    targetSpeed = clamp(targetSpeed, 5, 85);
+    targetSpeed = clamp(targetSpeed, 6, 85);
 
     // Skill-based noise
     const noiseAmt = opponent.skillPowerNoise * 20;
@@ -471,6 +495,12 @@
     if (!launch || !window.TeeGame || !window.TeeGame.botLaunch) return;
     botHasShotThisTurn = true;
     if (botStatusEl) botStatusEl.textContent = "";
+
+    // Trigger opponent swing animation
+    window.dispatchEvent(new CustomEvent("tee:opponent-shot-start", {
+      detail: {}
+    }));
+
     window.TeeGame.botLaunch(launch.vx, launch.vy, launch.mode);
   }
 
@@ -924,6 +954,17 @@
 
     if (currentTurn === "opponent" && !botHasShotThisTurn && opponent) {
       botPlanningTimer += dt;
+
+      // Refresh opponent aim pose every 600ms (expires after 800ms in game)
+      if (botPlanningTimer < botShotDelay && Math.floor(botPlanningTimer / 0.6) !== Math.floor((botPlanningTimer - dt) / 0.6)) {
+        const w = getWorld();
+        if (w && w.ball) {
+          window.dispatchEvent(new CustomEvent("tee:opponent-aim-update", {
+            detail: { ball: { x: w.ball.x, y: w.ball.y }, pointer: null, preview: null }
+          }));
+        }
+      }
+
       // Timeout guard: force shot after 15 seconds
       const forceShot = botPlanningTimer > 15.0;
       if (botPlanningTimer >= botShotDelay || forceShot) {
