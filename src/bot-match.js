@@ -369,36 +369,48 @@
     const distance = Math.abs(dx);
     if (distance < 0.3) return null;
 
-    const isPutt = tg && ball.grounded && tg.isPuttLie(ball);
+    const tgBall = { x: ball.x, grounded: ball.grounded };
+    const isPutt = tg && ball.grounded && tg.isPuttLie(tgBall);
     const mode = isPutt ? "putt" : "swing";
 
     if (mode === "putt") {
       const idealFlatSpeed = Math.sqrt(distance * 2 * GRAVITY * GREEN_ROLLING_RESISTANCE);
       const maxPuttSpeed = clamp(idealFlatSpeed * 1.85 + 1.2, 7.5, 18);
-      const noiseFactor = 1.0 + (Math.random() - 0.5) * 2 * opponent.skillPowerNoise * 0.6;
-      const speed = clamp(idealFlatSpeed * noiseFactor, 0.5, maxPuttSpeed);
+      const noiseFactor = 1.0 + (Math.random() - 0.5) * 2 * opponent.skillPowerNoise * 0.5;
+      const speed = clamp(idealFlatSpeed * noiseFactor, 0.6, maxPuttSpeed);
       const vx = dx > 0 ? speed : -speed;
       return { vx, vy: 0, mode: "putt" };
     }
 
-    // Swing: better distance-to-speed mapping with drag compensation
-    const dragScale = 1.0 + distance * 0.0011;
-    const idealSpeed = Math.sqrt(distance * GRAVITY / Math.sin(2 * 0.32)) * dragScale;
-    const targetSpeed = clamp(idealSpeed, 4.5, 85);
+    // Swing: distance-to-speed table with drag compensation built in
+    let targetSpeed;
+    if (distance < 20) {
+      targetSpeed = distance * 0.65 + 2;
+    } else if (distance < 80) {
+      targetSpeed = distance * 0.38 + 6;
+    } else if (distance < 180) {
+      targetSpeed = distance * 0.30 + 12;
+    } else if (distance < 280) {
+      targetSpeed = distance * 0.22 + 26;
+    } else {
+      targetSpeed = distance * 0.16 + 44;
+    }
+    targetSpeed = clamp(targetSpeed, 5, 85);
 
-    const distNorm = clamp(distance / 350, 0, 1);
-    const baseAngle = lerp(0.30, 0.45, distNorm);
-    const angle = baseAngle + (Math.random() - 0.5) * 2 * opponent.skillAimNoise * 0.4;
-    const clampedAngle = clamp(angle, 0.04, 0.78);
+    // Skill-based noise
+    const noiseAmt = opponent.skillPowerNoise * 20;
+    const baseSpeed = targetSpeed + (Math.random() - 0.5) * 2 * noiseAmt;
+    const speed = clamp(baseSpeed, 5, 85);
 
-    const maxSpeed = 85;
-    const minSpeed = 4.5;
-    const baseSpeed = targetSpeed + (Math.random() - 0.5) * 2 * opponent.skillPowerNoise * 25;
-    const speed = clamp(baseSpeed, minSpeed + 1, maxSpeed);
+    // Launch angle: steeper for longer shots
+    const distNorm = clamp(distance / 300, 0, 1);
+    const baseAngle = lerp(0.22, 0.48, distNorm);
+    const angleNoise = opponent.skillAimNoise * 0.15;
+    const angle = clamp(baseAngle + (Math.random() - 0.5) * 2 * angleNoise, 0.08, 0.72);
 
     const dir = dx > 0 ? 1 : -1;
-    const vx = Math.cos(clampedAngle) * dir * speed;
-    const vy = -Math.sin(clampedAngle) * speed;
+    const vx = Math.cos(angle) * dir * speed;
+    const vy = -Math.sin(angle) * speed;
 
     return { vx, vy, mode: "swing" };
   }
@@ -759,70 +771,49 @@
 
     // Force hole-out at 7 strokes
     if (!holed && currentTurn === "opponent" && opponentHoleStrokes >= 7) {
-      opponentHoled = true;
-      opponentHoleStrokes = 7;
-      const world = getWorld();
-      if (world) { world.holed = true; world.strokes = 7; }
-      updateMatchHUD();
-      setTimeout(() => {
-        if (window.TeeGame) window.TeeGame.forceHoleComplete();
-      }, 400);
+      forceOpponentHoleOut();
       return;
     }
 
     if (holed) {
       if (currentTurn === "player") {
         playerHoled = true;
-        const toHole = strokes;
-        if (toHole === 1) checkBotReaction("player_hole_in_one");
-        else if (toHole <= COURSE_PAR - 2) checkBotReaction("player_eagle");
-        else if (toHole <= COURSE_PAR - 1) checkBotReaction("player_birdie");
+        if (playerHoleStrokes === 1) checkBotReaction("player_hole_in_one");
+        else if (playerHoleStrokes <= COURSE_PAR - 2) checkBotReaction("player_eagle");
+        else if (playerHoleStrokes <= COURSE_PAR - 1) checkBotReaction("player_birdie");
       } else {
         opponentHoled = true;
       }
+
+      // If both holed, advance immediately
+      if (playerHoled && opponentHoled) {
+        updateMatchHUD();
+        advanceHole();
+        return;
+      }
     } else {
-      if (currentTurn === "player" && strokes >= 4) {
-        checkBotReaction("player_bad_miss");
-      }
-      if (currentTurn === "opponent" && strokes >= 4) {
-        checkBotReaction("opponent_bad_miss");
-      }
+      if (currentTurn === "player" && playerHoleStrokes >= 4) checkBotReaction("player_bad_miss");
+      if (currentTurn === "opponent" && opponentHoleStrokes >= 4) checkBotReaction("opponent_bad_miss");
     }
 
     updateMatchHUD();
-
-    // If bot's shot didn't hole, schedule next bot shot
-    if (currentTurn === "opponent" && !holed && !opponentHoled) {
-      scheduleBotShot();
-    }
+    switchTurn();
+    resetBallForTurn();
   }
 
   function handleHoleComplete() {
     if (!matchState.active) return;
-
-    if (currentTurn === "player") {
-      playerHoled = true;
-    } else {
-      opponentHoled = true;
+    const gameHole = window.TeeGame ? window.TeeGame.getCurrentHoleIndex() : holeIndex;
+    if (gameHole !== holeIndex) return;
+    if (playerHoled && opponentHoled) {
+      advanceHole();
     }
+  }
 
-    // If only one has holed, switch to other player
-    if (playerHoled && !opponentHoled) {
-      switchTurn();
-      resetBallForTurn();
-      return;
-    }
-    if (opponentHoled && !playerHoled) {
-      switchTurn();
-      resetBallForTurn();
-      return;
-    }
-
-    // Both players holed — record scores and advance
+  function advanceHole() {
     playerTotalScores.push(playerHoleStrokes);
     opponentTotalScores.push(opponentHoleStrokes);
 
-    // Check lead change
     const pTotal = getTotalPlayerStrokes();
     const oTotal = getTotalOpponentStrokes();
     if (pTotal < oTotal && opponentTotalScores.length >= 2) {
@@ -836,12 +827,10 @@
       if (wasLeading) checkBotReaction("opponent_takes_lead");
     }
 
-    // Reset for next hole
     playerHoleStrokes = 0;
     opponentHoleStrokes = 0;
     playerHoled = false;
     opponentHoled = false;
-
     holeIndex++;
 
     if (holeIndex >= MATCH_LENGTH) {
@@ -849,20 +838,27 @@
       return;
     }
 
-    // Advance hole
     window.dispatchEvent(new CustomEvent("tee:bot-match-advance-hole", {
       detail: { holeIndex }
     }));
 
-    // Coin toss for who goes first on new hole
     currentTurn = Math.random() < 0.5 ? "player" : "opponent";
     const world = getWorld();
     if (world) world.strokes = 0;
+    updateMatchHUD();
+    if (currentTurn === "opponent") scheduleBotShot();
+  }
 
+  function forceOpponentHoleOut() {
+    opponentHoled = true;
+    opponentHoleStrokes = 7;
     updateMatchHUD();
 
-    if (currentTurn === "opponent") {
-      scheduleBotShot();
+    if (playerHoled) {
+      advanceHole();
+    } else {
+      switchTurn();
+      resetBallForTurn();
     }
   }
 

@@ -1919,11 +1919,6 @@ const HOLES = [
     world.finishTimer = 0;
     world.slowTimer = 0;
     world.freezeTimer = 0;
-    world.player.x = b.x;
-    world.player.y = b.y;
-    world.player.animating = false;
-    world.player.timer = 0;
-    world.player.frame = 0;
     botMatchShotPending = true;
   }
 
@@ -3304,11 +3299,7 @@ const HOLES = [
     getHoleX: () => COURSE.holeX,
     getGreenStart: () => COURSE.greenStart,
     getGreenEnd: () => COURSE.greenEnd,
-    isPuttLie: (ball) => isPuttLie(ball),
-    forceHoleComplete: () => {
-      world.holeTransitionShown = true;
-      emitGameEvent("hole-complete");
-    }
+    isPuttLie: (ball) => isPuttLie(ball)
   };
 
   // Emit frame tick for bot match update loop
