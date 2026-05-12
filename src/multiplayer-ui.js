@@ -38,11 +38,6 @@
     // --- Find Match section ---
     const findMatchSection = createElement("div", { className: "intro-section mp-intro-section" });
 
-    const fmHeader = createElement("h2", { textContent: "FIND MATCH" });
-    const fmDesc = createElement("p", {
-      innerHTML: "Face a simulated opponent<br>with realistic golf AI."
-    });
-
     const fmBtn = createElement("button", {
       className: "intro-button mp-intro-btn",
       textContent: "FIND MATCH →",
@@ -51,19 +46,10 @@
       }
     });
 
-    findMatchSection.appendChild(fmHeader);
-    findMatchSection.appendChild(fmDesc);
     findMatchSection.appendChild(fmBtn);
 
     // --- Play a Friend section ---
     const modeSection = createElement("div", { className: "intro-section mp-intro-section", id: "mp-intro-buttons" });
-    
-    const header = createElement("h2", { textContent: "PLAY A FRIEND" });
-    const desc = createElement("p", { 
-      innerHTML: "No accounts. Create a room,<br>send the code, tee off." 
-    });
-
-    const btnRow = createElement("div", { className: "mp-intro-btn-row" });
 
     const playFriendBtn = createElement("button", {
       className: "intro-button mp-intro-btn",
@@ -73,10 +59,7 @@
       }
     });
 
-    btnRow.appendChild(playFriendBtn);
-    modeSection.appendChild(header);
-    modeSection.appendChild(desc);
-    modeSection.appendChild(btnRow);
+    modeSection.appendChild(playFriendBtn);
 
     // Insert after the product section, before the play button
     const sections = parent.querySelectorAll(".intro-section");

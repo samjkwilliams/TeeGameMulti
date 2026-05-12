@@ -375,30 +375,32 @@
     if (mode === "putt") {
       const idealFlatSpeed = Math.sqrt(distance * 2 * GRAVITY * GREEN_ROLLING_RESISTANCE);
       const maxPuttSpeed = clamp(idealFlatSpeed * 1.85 + 1.2, 7.5, 18);
-      const noiseFactor = 1.0 + (Math.random() - 0.5) * 2 * opponent.skillPowerNoise;
+      const noiseFactor = 1.0 + (Math.random() - 0.5) * 2 * opponent.skillPowerNoise * 0.6;
       const speed = clamp(idealFlatSpeed * noiseFactor, 0.5, maxPuttSpeed);
       const vx = dx > 0 ? speed : -speed;
-      const vy = 0;
-      return { vx, vy, mode: "putt" };
+      return { vx, vy: 0, mode: "putt" };
     }
 
-    const distNorm = clamp(distance / 350, 0, 1);
-    const baseAngle = lerp(0.18, 0.55, distNorm);
-    const angle = baseAngle + (Math.random() - 0.5) * 2 * opponent.skillAimNoise * 0.5;
-    const clampedAngle = clamp(angle, -0.05, 0.84);
+    // Swing: better distance-to-speed mapping with drag compensation
+    const dragScale = 1.0 + distance * 0.0011;
+    const idealSpeed = Math.sqrt(distance * GRAVITY / Math.sin(2 * 0.32)) * dragScale;
+    const targetSpeed = clamp(idealSpeed, 4.5, 85);
 
-    const basePower = lerp(0.08, 0.92, distNorm * distNorm);
-    const power = clamp(basePower + (Math.random() - 0.5) * 2 * opponent.skillPowerNoise, 0.04, 1.0);
+    const distNorm = clamp(distance / 350, 0, 1);
+    const baseAngle = lerp(0.30, 0.45, distNorm);
+    const angle = baseAngle + (Math.random() - 0.5) * 2 * opponent.skillAimNoise * 0.4;
+    const clampedAngle = clamp(angle, 0.04, 0.78);
 
     const maxSpeed = 85;
     const minSpeed = 4.5;
-    const speed = minSpeed + Math.pow(power, 1.25) * (maxSpeed - minSpeed);
+    const baseSpeed = targetSpeed + (Math.random() - 0.5) * 2 * opponent.skillPowerNoise * 25;
+    const speed = clamp(baseSpeed, minSpeed + 1, maxSpeed);
 
     const dir = dx > 0 ? 1 : -1;
     const vx = Math.cos(clampedAngle) * dir * speed;
     const vy = -Math.sin(clampedAngle) * speed;
 
-    return { vx, vy, mode: "swing", power };
+    return { vx, vy, mode: "swing" };
   }
 
   function getTerrainSlope(x) {
@@ -511,6 +513,10 @@
     const wrapper = document.querySelector(".game-wrapper");
     if (!wrapper) return;
 
+    // Opponent name under logo
+    const oppNameEl = createEl("div", { className: "bm-opp-name", id: "bm-opp-name" });
+    wrapper.appendChild(oppNameEl);
+
     matchHudEl = createEl("div", { className: "mp-hud", id: "bm-hud" });
     wrapper.appendChild(matchHudEl);
 
@@ -579,17 +585,18 @@
     const playerScore = createEl("div", {
       className: "mp-player-score" + (isPlayerTurn ? " mp-active" : "")
     });
-    playerScore.appendChild(createEl("span", { className: "mp-score-name", textContent: playerName }));
+    playerScore.appendChild(createEl("span", { className: "mp-score-name", textContent: "You" }));
     playerScore.appendChild(createEl("span", { className: "mp-score-strokes", textContent: String(playerHoleStrokes) }));
     matchCardEl.appendChild(playerScore);
 
     matchCardEl.appendChild(createEl("span", { className: "mp-vs", textContent: "vs" }));
 
-    // Opponent score
+    // Opponent score (just strokes, name moved under logo)
     const oppScore = createEl("div", {
       className: "mp-player-score" + (!isPlayerTurn ? " mp-active" : "")
     });
-    oppScore.appendChild(createEl("span", { className: "mp-score-name", textContent: opponent?.name || "Opponent" }));
+    const shortName = (opponent?.name || "Opp").substring(0, 6);
+    oppScore.appendChild(createEl("span", { className: "mp-score-name", textContent: shortName }));
     oppScore.appendChild(createEl("span", { className: "mp-score-strokes", textContent: String(opponentHoleStrokes) }));
     matchCardEl.appendChild(oppScore);
 
@@ -608,11 +615,19 @@
       turnPill.textContent = "Your Turn";
     } else {
       turnPill.classList.add("mp-opp-turn");
-      turnPill.textContent = (opponent?.name || "Opponent") + " Turn";
+      const short = (opponent?.name || "Opp").substring(0, 8);
+      turnPill.textContent = short + " Turn";
     }
     matchCardEl.appendChild(turnPill);
 
     matchHudEl.insertBefore(matchCardEl, matchReactBtn);
+
+    // Update opponent name under logo
+    const oppNameDisplay = document.getElementById("bm-opp-name");
+    if (oppNameDisplay && opponent) {
+      oppNameDisplay.textContent = opponent.name;
+      oppNameDisplay.style.display = "";
+    }
   }
 
   function destroyMatchHUD() {
@@ -621,6 +636,10 @@
     }
     if (botStatusEl && botStatusEl.parentNode) {
       botStatusEl.parentNode.removeChild(botStatusEl);
+    }
+    const oppNameDisplay = document.getElementById("bm-opp-name");
+    if (oppNameDisplay && oppNameDisplay.parentNode) {
+      oppNameDisplay.parentNode.removeChild(oppNameDisplay);
     }
     matchHudEl = null;
     matchCardEl = null;
@@ -736,6 +755,19 @@
       playerHoleStrokes = strokes;
     } else {
       opponentHoleStrokes = strokes;
+    }
+
+    // Force hole-out at 7 strokes
+    if (!holed && currentTurn === "opponent" && opponentHoleStrokes >= 7) {
+      opponentHoled = true;
+      opponentHoleStrokes = 7;
+      const world = getWorld();
+      if (world) { world.holed = true; world.strokes = 7; }
+      updateMatchHUD();
+      setTimeout(() => {
+        if (window.TeeGame) window.TeeGame.forceHoleComplete();
+      }, 400);
+      return;
     }
 
     if (holed) {

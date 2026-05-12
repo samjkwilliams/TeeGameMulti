@@ -1233,13 +1233,30 @@ body.desktop #game {
 .bm-bot-status {
   position: absolute;
   z-index: 6;
-  bottom: max(158px, calc(env(safe-area-inset-bottom) + 146px));
+  bottom: max(208px, calc(env(safe-area-inset-bottom) + 196px));
   left: 50%;
   transform: translateX(-50%);
   font-size: 12px;
   font-weight: 600;
   color: rgb(255 255 255 / 0.55);
   text-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ── Opponent Name Under Logo ── */
+
+.bm-opp-name {
+  position: absolute;
+  z-index: 5;
+  top: max(148px, calc(env(safe-area-inset-top) + 138px));
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgb(255 255 255 / 0.7);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
   white-space: nowrap;
   pointer-events: none;
 }
@@ -1307,7 +1324,12 @@ body.desktop #game {
   }
 
   .bm-bot-status {
-    bottom: max(150px, calc(env(safe-area-inset-bottom) + 142px));
+    bottom: max(200px, calc(env(safe-area-inset-bottom) + 192px));
+    font-size: 11px;
+  }
+
+  .bm-opp-name {
+    top: max(142px, calc(env(safe-area-inset-top) + 132px));
     font-size: 11px;
   }
 }

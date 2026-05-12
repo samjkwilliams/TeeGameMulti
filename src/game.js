@@ -1821,7 +1821,15 @@ const HOLES = [
     world.holeTransitionShown = false;
     world.cameraMode = "settled";
 
-    if (isBotMatchActive()) botMatchShotPending = false;
+    if (wasMoving && isBotMatchActive() && botMatchShotPending) {
+      botMatchShotPending = false;
+      emitGameEvent("shot-settled", {
+        strokes: world.strokes,
+        holed: world.holed,
+        ball: serializeBall(b),
+        farthestHit: world.farthestHit
+      });
+    }
 
     if (wasMoving && isMultiplayerActive() && multiplayerShotPending) {
       multiplayerShotPending = false;
@@ -3296,7 +3304,11 @@ const HOLES = [
     getHoleX: () => COURSE.holeX,
     getGreenStart: () => COURSE.greenStart,
     getGreenEnd: () => COURSE.greenEnd,
-    isPuttLie: (ball) => isPuttLie(ball)
+    isPuttLie: (ball) => isPuttLie(ball),
+    forceHoleComplete: () => {
+      world.holeTransitionShown = true;
+      emitGameEvent("hole-complete");
+    }
   };
 
   // Emit frame tick for bot match update loop
