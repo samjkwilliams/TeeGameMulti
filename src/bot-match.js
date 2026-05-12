@@ -400,7 +400,12 @@
     const holeX = tg ? tg.getHoleX() : ball.x + 100;
     const dx = holeX - ball.x;
     const distance = Math.abs(dx);
-    if (distance < 0.3) return null;
+
+    // Very close to hole: tap-in putt
+    if (distance < 0.8) {
+      const vx = (dx > 0 ? 1 : -1) * clamp(distance * 1.8 + 0.3, 0.5, 8);
+      return { vx, vy: 0, mode: "putt" };
+    }
 
     const tgBall = { x: ball.x, grounded: ball.grounded };
     const isPutt = tg && ball.grounded && tg.isPuttLie(tgBall);
@@ -912,12 +917,22 @@
 
     if (currentTurn === "opponent" && !botHasShotThisTurn && opponent) {
       botPlanningTimer += dt;
-      if (botPlanningTimer >= botShotDelay) {
+      // Timeout guard: force shot after 15 seconds
+      const forceShot = botPlanningTimer > 15.0;
+      if (botPlanningTimer >= botShotDelay || forceShot) {
+        if (forceShot) botShotDelay = 0;
         const world = getWorld();
         if (world && world.ball && world.ball.asleep && !world.holed && !opponentHoled) {
           const launch = planBotShot(world);
           if (launch) {
             executeBotShot(launch);
+          } else {
+            // Fallback: direct putt toward hole
+            const tg = window.TeeGame;
+            const holeX = tg ? tg.getHoleX() : world.ball.x + 100;
+            const dx = holeX - world.ball.x;
+            const vx = dx > 0 ? 1.5 : -1.5;
+            executeBotShot({ vx, vy: 0, mode: "putt" });
           }
         }
       }
