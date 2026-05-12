@@ -816,6 +816,9 @@ const HOLES = [
       opponentAimData = null;
       opponentAimGuide = [];
       opponentAiming = false;
+      if (event.detail && event.detail.launch) {
+        world.player.direction = event.detail.launch.vx >= 0 ? 1 : -1;
+      }
       return;
     }
 

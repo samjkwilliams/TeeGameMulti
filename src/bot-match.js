@@ -496,10 +496,14 @@
 
     // Trigger opponent swing animation
     window.dispatchEvent(new CustomEvent("tee:opponent-shot-start", {
-      detail: {}
+      detail: { launch: { vx: launch.vx } }
     }));
 
-    window.TeeGame.botLaunch(launch.vx, launch.vy, launch.mode);
+    // Delay actual launch until swing animation reaches contact frame (7/18 fps ≈ 389ms)
+    setTimeout(() => {
+      if (!matchState.active) return;
+      window.TeeGame.botLaunch(launch.vx, launch.vy, launch.mode);
+    }, 390);
   }
 
   // --- Reaction System ---
