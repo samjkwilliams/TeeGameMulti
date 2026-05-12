@@ -364,16 +364,14 @@
       const w = getWorld();
       if (w) {
         w.strokes = currentTurn === "player" ? playerHoleStrokes : opponentHoleStrokes;
-        if (currentTurn === "player") {
-          w.player.x = w.ball.x;
-          w.player.y = w.ball.y;
-          w.player.animating = false;
-          w.player.aiming = false;
-          w.player.timer = 0;
-          w.player.frame = 0;
-          w.player.pendingLaunch = null;
-          w.cameraMode = "settled";
-        }
+        w.player.x = w.ball.x;
+        w.player.y = w.ball.y;
+        w.player.animating = false;
+        w.player.aiming = false;
+        w.player.timer = 0;
+        w.player.frame = 0;
+        w.player.pendingLaunch = null;
+        w.cameraMode = "settled";
       }
     }
 

@@ -1918,7 +1918,6 @@ const HOLES = [
     b.bounceCount = 0;
     world.launchOriginX = b.x;
     world.strokes += 1;
-    world.cameraMode = "flight";
     world.finishTimer = 0;
     world.slowTimer = 0;
     world.freezeTimer = 0;
