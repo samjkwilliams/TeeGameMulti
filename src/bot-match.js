@@ -343,19 +343,26 @@
         world.holed = false;
         world.holeSinkTimer = 0;
         world.holeTransitionShown = false;
+      } else {
+        // First shot on this hole: reset ball to tee
+        window.dispatchEvent(new CustomEvent("tee:bot-match-reset-ball", {
+          detail: { holeIndex }
+        }));
       }
-      world.strokes = currentTurn === "player" ? playerHoleStrokes : opponentHoleStrokes;
-
-      // Position player sprite at ball when it's the player's turn
-      if (currentTurn === "player") {
-        world.player.x = world.ball.x;
-        world.player.y = world.ball.y;
-        world.player.animating = false;
-        world.player.aiming = false;
-        world.player.timer = 0;
-        world.player.frame = 0;
-        world.player.pendingLaunch = null;
-        world.cameraMode = "settled";
+      // Re-get world in case resetBallForTurn recreated it
+      const w = getWorld();
+      if (w) {
+        w.strokes = currentTurn === "player" ? playerHoleStrokes : opponentHoleStrokes;
+        if (currentTurn === "player") {
+          w.player.x = w.ball.x;
+          w.player.y = w.ball.y;
+          w.player.animating = false;
+          w.player.aiming = false;
+          w.player.timer = 0;
+          w.player.frame = 0;
+          w.player.pendingLaunch = null;
+          w.cameraMode = "settled";
+        }
       }
     }
 
