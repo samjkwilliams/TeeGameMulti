@@ -2568,8 +2568,8 @@ const HOLES = [
     const isOppTurn = (isMultiplayerActive() && !window.TeeMultiplayer.isLocalTurn())
       || (isBotMatchActive() && !window.TeeBotMatch.isLocalTurn());
     
-    // Player is only drawn if they are visible (ball asleep, or animating swing)
-    if (!world.ball.asleep && !p.animating && !(isOppTurn && (opponentSwingFrame >= 0 || opponentAiming))) return;
+    // Don't draw player during ball flight unless animating a swing, or it's the opponent's turn
+    if (!world.ball.asleep && !p.animating && !isOppTurn) return;
 
     const outfitIndex = Math.min(currentHoleIndex, OUTFIT_SETS.length - 1);
     const outfit = assets.outfits[outfitIndex];
