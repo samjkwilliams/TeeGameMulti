@@ -584,6 +584,7 @@ const HOLES = [
   let terrainSurfaceCache = null;
   let resizeQueued = true;
   let multiplayerShotPending = false;
+  let botMatchShotPending = false;
   let opponentAimData = null;
   let opponentAimGuide = [];
   let opponentSwingTimer = 0;
@@ -597,8 +598,13 @@ const HOLES = [
     return window.TeeMultiplayer && window.TeeMultiplayer.isEnabled();
   }
 
+  function isBotMatchActive() {
+    return window.TeeBotMatch && window.TeeBotMatch.isPlaying();
+  }
+
   function canLocalAim() {
     if (isMultiplayerActive()) return window.TeeMultiplayer.isLocalTurn();
+    if (isBotMatchActive()) return window.TeeBotMatch.isLocalTurn();
     return true;
   }
 
@@ -1262,6 +1268,10 @@ const HOLES = [
                 startedAt: Date.now()
               });
             }
+
+            if (isBotMatchActive() && window.TeeBotMatch.isLocalTurn()) {
+              botMatchShotPending = true;
+            }
           }
         }
 
@@ -1327,7 +1337,7 @@ const HOLES = [
       world.ball.y = sinkWorld + BALL.radius * (0.32 - t * 1.55);
       if (world.holeSinkTimer > 2.0 && !world.holeTransitionShown) {
         world.holeTransitionShown = true;
-        if (isMultiplayerActive()) {
+        if (isMultiplayerActive() || isBotMatchActive()) {
           emitGameEvent("hole-complete");
         } else {
           showHoleAdvance();
@@ -1431,6 +1441,16 @@ const HOLES = [
         farthestHit: world.farthestHit,
         holeTimer: world.holeTimer,
         settledAt: Date.now()
+      });
+    }
+
+    if (wasMoving && isBotMatchActive() && botMatchShotPending) {
+      botMatchShotPending = false;
+      emitGameEvent("shot-settled", {
+        strokes: world.strokes,
+        holed: world.holed,
+        ball: serializeBall(ball),
+        farthestHit: world.farthestHit
       });
     }
   }
@@ -1801,6 +1821,8 @@ const HOLES = [
     world.holeTransitionShown = false;
     world.cameraMode = "settled";
 
+    if (isBotMatchActive()) botMatchShotPending = false;
+
     if (wasMoving && isMultiplayerActive() && multiplayerShotPending) {
       multiplayerShotPending = false;
       world.player.x = b.x;
@@ -1866,6 +1888,35 @@ const HOLES = [
     pointer = null;
     shotPreview = null;
     invalidateGuideCache();
+  }
+
+  function botLaunch(vx, vy, mode) {
+    const b = world.ball;
+    if (!b.asleep || world.holed) return;
+    b.vx = vx;
+    b.vy = vy;
+    b.omega = mode === "putt" ? rollingOmega(vx) : 0;
+    if (mode !== "putt") {
+      b.grounded = false;
+      b.slipping = true;
+    } else {
+      b.grounded = true;
+      b.slipping = false;
+    }
+    b.asleep = false;
+    b.bounceCount = 0;
+    world.launchOriginX = b.x;
+    world.strokes += 1;
+    world.cameraMode = "flight";
+    world.finishTimer = 0;
+    world.slowTimer = 0;
+    world.freezeTimer = 0;
+    world.player.x = b.x;
+    world.player.y = b.y;
+    world.player.animating = false;
+    world.player.timer = 0;
+    world.player.frame = 0;
+    botMatchShotPending = true;
   }
 
   function computeLaunchFromDrag() {
@@ -3037,7 +3088,7 @@ const HOLES = [
       }
       return;
     }
-    if (isMultiplayerActive()) return; // Block hole navigation in multiplayer
+    if (isMultiplayerActive() || isBotMatchActive()) return; // Block hole navigation in match modes
     if (event.key === "ArrowLeft") {
       setHole(currentHoleIndex - 1);
     } else if (event.key === "ArrowRight") {
@@ -3082,12 +3133,12 @@ const HOLES = [
 
 
   holePrevButton?.addEventListener("click", () => {
-    if (isMultiplayerActive()) return;
+    if (isMultiplayerActive() || isBotMatchActive()) return;
     setHole(currentHoleIndex - 1);
   });
 
   holeNextButton?.addEventListener("click", () => {
-    if (isMultiplayerActive()) return;
+    if (isMultiplayerActive() || isBotMatchActive()) return;
     setHole(currentHoleIndex + 1);
   });
 
@@ -3214,8 +3265,10 @@ const HOLES = [
 
   function continueToNextHole() {
     if (isMultiplayerActive()) {
-      // Handled by multiplayer module
       window.TeeMultiplayer.advanceToNextHole();
+      return;
+    }
+    if (isBotMatchActive()) {
       return;
     }
     hideHoleAdvance();
@@ -3230,4 +3283,52 @@ const HOLES = [
   holeAdvanceContinue?.addEventListener("click", continueToNextHole);
   holeAdvanceRetry?.addEventListener("click", () => { hideHoleAdvance(); showIntro(); setHole(0); });
   holeAdvanceBonus?.addEventListener("click", () => { hideHoleAdvance(); setHole(currentHoleIndex + 1); });
+
+  // --- Bot Match Bridge ---
+
+  window.TeeGame = {
+    getWorld: () => world,
+    botLaunch,
+    terrainSlope: (x) => terrainSlope(x),
+    terrainHeight: (x) => terrainHeight(x),
+    getCurrentHoleIndex: () => currentHoleIndex,
+    getHoles: () => HOLES,
+    getHoleX: () => COURSE.holeX,
+    getGreenStart: () => COURSE.greenStart,
+    getGreenEnd: () => COURSE.greenEnd,
+    isPuttLie: (ball) => isPuttLie(ball)
+  };
+
+  // Emit frame tick for bot match update loop
+  const origTick = tick;
+  tick = function(now) {
+    origTick(now);
+    if (isBotMatchActive()) {
+      const dt = Math.min((now - (tick._last || now)) / 1000, 0.05);
+      tick._last = now;
+      window.dispatchEvent(new CustomEvent("tee:frame-tick", { detail: { dt } }));
+    }
+  };
+  tick._last = 0;
+
+  // Listen for bot match hole advance
+  window.addEventListener("tee:bot-match-advance-hole", (e) => {
+    if (e.detail && e.detail.holeIndex !== undefined) {
+      setHole(e.detail.holeIndex);
+    }
+  });
+
+  // Listen for bot match start
+  window.addEventListener("tee:bot-match-start", (e) => {
+    hideIntro();
+    if (e.detail && e.detail.holeIndex !== undefined) {
+      setHole(e.detail.holeIndex);
+    }
+  });
+
+  // Listen for bot match ball reset
+  window.addEventListener("tee:bot-match-reset-ball", (e) => {
+    const idx = (e.detail && e.detail.holeIndex !== undefined) ? e.detail.holeIndex : currentHoleIndex;
+    setHole(idx);
+  });
 })();

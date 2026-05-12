@@ -35,7 +35,27 @@
     if (!playButton) return;
     const parent = playButton.parentNode;
 
-    // Replace intro section with mode selection
+    // --- Find Match section ---
+    const findMatchSection = createElement("div", { className: "intro-section mp-intro-section" });
+
+    const fmHeader = createElement("h2", { textContent: "FIND MATCH" });
+    const fmDesc = createElement("p", {
+      innerHTML: "Face a simulated opponent<br>with realistic golf AI."
+    });
+
+    const fmBtn = createElement("button", {
+      className: "intro-button mp-intro-btn",
+      textContent: "FIND MATCH →",
+      onClick: () => {
+        window.dispatchEvent(new CustomEvent("tee:bot-match-find"));
+      }
+    });
+
+    findMatchSection.appendChild(fmHeader);
+    findMatchSection.appendChild(fmDesc);
+    findMatchSection.appendChild(fmBtn);
+
+    // --- Play a Friend section ---
     const modeSection = createElement("div", { className: "intro-section mp-intro-section", id: "mp-intro-buttons" });
     
     const header = createElement("h2", { textContent: "PLAY A FRIEND" });
@@ -62,7 +82,8 @@
     const sections = parent.querySelectorAll(".intro-section");
     const lastSection = sections[sections.length - 1];
     if (lastSection) {
-      lastSection.after(modeSection);
+      lastSection.after(findMatchSection);
+      findMatchSection.after(modeSection);
     } else {
       playButton.before(modeSection);
     }

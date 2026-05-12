@@ -1137,3 +1137,177 @@ body.desktop #game {
     font-size: 28px;
   }
 }
+
+/* ── Bot Match Overlay ── */
+
+.bm-overlay {
+  position: absolute;
+  z-index: 16;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgb(10 20 30 / 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: grid;
+  place-items: center;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.bm-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bm-panel {
+  background: #0f1e2e;
+  color: #fff;
+  border-radius: 24px;
+  padding: 24px;
+  width: 100%;
+  max-width: 440px;
+  text-align: center;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  box-sizing: border-box;
+}
+
+.bm-logo {
+  width: 140px;
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+.bm-heading {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  margin: 0 0 16px;
+  background: linear-gradient(135deg, #f0d78c 0%, #f0b95d 40%, #e8a840 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bm-status {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.65);
+  margin: 8px 0 16px;
+  animation: mp-pulse 1.5s ease-in-out infinite;
+}
+
+.bm-spinner {
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 20px;
+  border: 3px solid rgb(255 255 255 / 0.1);
+  border-top-color: #f0b95d;
+  border-radius: 50%;
+  animation: bm-spin 0.8s linear infinite;
+}
+
+@keyframes bm-spin {
+  to { transform: rotate(360deg); }
+}
+
+.bm-cancel-btn {
+  background: rgb(255 255 255 / 0.06) !important;
+  color: rgb(255 255 255 / 0.6) !important;
+  border: 1px solid rgb(255 255 255 / 0.08) !important;
+  font-size: 13px !important;
+}
+
+.bm-cancel-btn:hover {
+  color: rgb(255 255 255 / 0.9) !important;
+  background: rgb(255 255 255 / 0.1) !important;
+}
+
+/* ── Bot Status Line ── */
+
+.bm-bot-status {
+  position: absolute;
+  z-index: 6;
+  bottom: max(158px, calc(env(safe-area-inset-bottom) + 146px));
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.55);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ── Match Skill Badge ── */
+
+.bm-skill-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: rgb(240 185 93 / 0.15);
+  color: #f0b95d;
+  margin-left: 8px;
+}
+
+/* ── Match Breakdown ── */
+
+.bm-breakdown {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.bm-breakdown h3 {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgb(255 255 255 / 0.5);
+  margin: 0 0 8px;
+}
+
+.bm-hole-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bm-hole-row span:first-child {
+  color: rgb(255 255 255 / 0.5);
+}
+
+.bm-hole-row span:nth-child(2) {
+  color: #fff;
+}
+
+.bm-hole-row span:nth-child(3) {
+  color: rgb(255 255 255 / 0.6);
+}
+
+/* ── Result Overlay ── */
+
+.bm-result-overlay {
+  z-index: 16;
+}
+
+@media (max-width: 620px) {
+  .bm-panel {
+    padding: 20px 16px;
+    max-width: 360px;
+  }
+
+  .bm-bot-status {
+    bottom: max(150px, calc(env(safe-area-inset-bottom) + 142px));
+    font-size: 11px;
+  }
+}
