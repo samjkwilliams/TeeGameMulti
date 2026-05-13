@@ -1609,7 +1609,7 @@ const HOLES = [
     const airborne = !ball.grounded;
     const cupReach = airborne ? COURSE.holeRadius * 4 : COURSE.holeRadius * 2.6;
     const nearCup = Math.abs(ball.x - COURSE.holeX) < cupReach;
-    const speedLimit = airborne ? 8 : 2.5;
+    const speedLimit = airborne ? 12 : 4;
     const slowEnough = Math.hypot(ball.vx, ball.vy) < speedLimit;
     const descending = airborne ? ball.vy < 1 : true;
     if (!world.holed && nearCup && ball.y - BALL.radius < holeY + 0.12 && slowEnough && descending) {
