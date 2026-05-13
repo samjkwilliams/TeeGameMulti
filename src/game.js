@@ -329,6 +329,83 @@ const HOLES = [
         [460, -3.0],
         [530, -6.0]
       ])
+    },
+    {
+      name: "The Labyrinth",
+      startX: 15,
+      holeX: 348,
+      endX: 540,
+      greenStart: 334,
+      greenEnd: 360,
+      holeRadius: 0.18,
+      colors: {
+        skyTop: "#0d0221",
+        skyMid: "#3d0e61",
+        skyGlow: "#e04090",
+        skyHorizon: "#7b2d8b",
+        fairway: "#1a1a3e",
+        fairwayMid: "#33cc88",
+        soil: "#0a0a22",
+        rim: "rgb(100 255 180 / 0.8)",
+        flag: "#ff4da6"
+      },
+      atmosphere: "night",
+      bumpers: [
+        // Ridge-top rocks (The Spine)
+        { x: 125, y: 5.5,  radius: 2.0 },
+        { x: 140, y: 5.0,  radius: 2.8 },
+        { x: 155, y: 4.2,  radius: 1.6 },
+        // Labyrinth rocks — maze section
+        { x: 210, y: -2.0,  radius: 2.5 },
+        { x: 225, y: -1.0,  radius: 3.0 },
+        { x: 240, y: -3.5,  radius: 2.2 },
+        { x: 252, y: -0.5,  radius: 2.8 },
+        { x: 268, y: -2.5,  radius: 2.0 },
+        // Green guardian rocks
+        { x: 310, y: -1.0,  radius: 2.5 },
+        { x: 330, y: -0.5,  radius: 1.8 },
+        // Punishment rocks past green
+        { x: 365, y: -7.0,  radius: 2.5 },
+        { x: 390, y: -5.0,  radius: 3.5 },
+      ],
+      terrainKnots: pts([
+        [-140, 0],
+        [-60, -1],
+        [15, 7.0],       // Tee on raised cliff platform
+        [30, -2.0],      // Sharp cliff drop
+        [50, -6.0],      // First valley — "The Forecourt"
+        [70, -3.0],      // Rising approach to ridge
+        [90, -5.0],      // Dip — go low road
+        [100, -1.0],     // Ramp up to the spine
+        [110, 3.0],      // Ridge climb
+        [120, 6.0],      // "The Spine" — narrow high road with bumper rocks
+        [135, 5.2],
+        [150, 4.5],
+        [160, 0.0],      // Spine ends — merge point
+        [170, -5.0],     // Drop into valley — "The Abyss"
+        [185, -8.0],     // Bottom of abyss
+        [195, -4.5],     // Climbing out
+        [205, -2.0],     // Entering the labyrinth
+        [215, -4.0],     // Dip between rocks
+        [228, -1.5],     // Rock gap
+        [240, -4.5],     // Deep pocket between boulders
+        [255, -1.0],     // Rock-hop route
+        [265, -3.5],     // Final labyrinth pocket
+        [278, 1.0],      // Climb out — "The Squeeze" narrows
+        [288, 3.0],      // Saddle point — must clear this ridge
+        [295, -2.0],     // Drop behind saddle
+        [305, -4.0],     // Approach valley before green
+        [320, -1.5],     // Ramp up to green plateau
+        [334, -0.5],     // Green approach — narrow plateau
+        [348, 0.0],      // Green (hole on top of small mound)
+        [360, -0.5],     // Green tail
+        [370, -8.0],     // SHARP death drop past green
+        [385, -12.0],    // Deep punishment canyon
+        [405, -6.0],     // Recovery climb
+        [440, -3.0],
+        [490, -2.0],
+        [550, -5.0]
+      ])
     }
   ];
 
