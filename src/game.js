@@ -19,7 +19,8 @@
   const OUTFIT_SETS = [
     { swing: "Outfit01.png", putt: "Outfit01_Putt.png", idle: "Outfit01_Idle.png" },
     { swing: "Outfit02.png", putt: "Outfit02_Putt.png", idle: "Outfit02_Idle.png" },
-    { swing: "Outfit03.png", putt: "Outfit03_Putt.png", idle: "Outfit03_Idle.png" }
+    { swing: "Outfit03.png", putt: "Outfit03_Putt.png", idle: "Outfit03_Idle.png" },
+    { swing: "Outfit04.png", putt: "Outfit04_Putt.png", idle: "Outfit04_Idle.png" }
   ];
   const TERRAIN_OVERLAY_SRC = `overlay.webp`;
   

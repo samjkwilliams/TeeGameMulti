@@ -64,8 +64,7 @@
   let botPlanningTimer = 0;
   let botShotDelay = 0;
   let botHasShotThisTurn = false;
-  let reactionCooldown = 0;
-  let lastReactionContext = null;
+  let reactionCooldowns = {};
   let playerBallState = null;
   let opponentBallState = null;
 
@@ -272,7 +271,9 @@
     botPlanningTimer = 0;
     botShotDelay = 0;
     botHasShotThisTurn = false;
-    reactionCooldown = 0;
+    reactionCooldowns = {};
+    playerEmojiCount = 0;
+    playerEmojiTimer = 0;
 
     hideIntroModal();
     createMatchHUD();
@@ -393,17 +394,9 @@
     botHasShotThisTurn = false;
     updateBotStatus();
 
-    // Show opponent in aiming pose
-    const world = getWorld();
-    if (world && world.ball) {
-      const launch = planBotShot(world);
-      window.dispatchEvent(new CustomEvent("tee:opponent-aim-update", {
-        detail: {
-          ball: { x: world.ball.x, y: world.ball.y },
-          pointer: null,
-          preview: launch || null
-        }
-      }));
+    // Show opponent aiming pose
+    if (window.TeeGame && window.TeeGame.setOpponentAiming) {
+      window.TeeGame.setOpponentAiming(true);
     }
   }
 
@@ -494,15 +487,19 @@
     botHasShotThisTurn = true;
     if (botStatusEl) botStatusEl.textContent = "";
 
-    // Trigger opponent swing animation
-    window.dispatchEvent(new CustomEvent("tee:opponent-shot-start", {
-      detail: { launch: { vx: launch.vx } }
-    }));
+    // Set opponent direction before swing
+    const tg = window.TeeGame;
+    const world = tg.getWorld();
+    if (world) world.player.direction = launch.vx >= 0 ? 1 : -1;
 
-    // Delay actual launch until swing animation reaches contact frame (7/18 fps ≈ 389ms)
+    // Trigger swing animation directly (no event dispatch)
+    tg.setOpponentAiming(false);
+    tg.triggerOpponentSwing();
+
+    // Delay actual launch until swing reaches contact frame (7/18 fps ≈ 389ms)
     setTimeout(() => {
       if (!matchState.active) return;
-      window.TeeGame.botLaunch(launch.vx, launch.vy, launch.mode);
+      tg.botLaunch(launch.vx, launch.vy, launch.mode);
     }, 390);
   }
 
@@ -516,31 +513,44 @@
     { emoji: "😡", name: "rage" }
   ];
 
+  let playerEmojiCount = 0;
+  let playerEmojiTimer = 0;
+
   function checkBotReaction(context) {
-    if (!opponent || !matchState.active || reactionCooldown > 0) return;
-    if (Math.random() > opponent.personality.reactionChance) return;
+    if (!opponent || !matchState.active || currentTurn === "opponent") return;
+
+    const cooldown = reactionCooldowns[context] || 0;
+    if (cooldown > 0) return;
+
+    const p = opponent.personality;
+    const roll = Math.random();
+    if (roll > p.reactionChance * 1.2) return;
 
     let emoji = null;
 
     switch (context) {
       case "player_hole_in_one":
       case "player_eagle":
-        emoji = Math.random() < 0.7 ? "😮" : "😍";
+        emoji = p.trashTalk
+          ? (Math.random() < 0.6 ? "😡" : "😮")
+          : (Math.random() < 0.6 ? "😮" : "😍");
         break;
       case "player_birdie":
-        emoji = Math.random() < 0.5 ? "😀" : "😮";
+        emoji = Math.random() < 0.5 ? "😀" : (p.trashTalk ? "😡" : "😮");
         break;
       case "player_bad_miss":
-        emoji = Math.random() < 0.5 ? "😂" : "😀";
+        emoji = p.trashTalk
+          ? (Math.random() < 0.6 ? "😂" : "😀")
+          : "😂";
         break;
       case "player_great_shot":
         emoji = Math.random() < 0.5 ? "😮" : "😍";
         break;
       case "opponent_bad_miss":
-        emoji = opponent.personality.trashTalk ? "😡" : "😀";
+        emoji = p.trashTalk ? "😡" : (Math.random() < 0.5 ? "😀" : "😮");
         break;
       case "opponent_takes_lead":
-        emoji = opponent.personality.trashTalk ? "😀" : "😍";
+        emoji = p.trashTalk ? "😀" : "😍";
         break;
       case "player_takes_lead":
         emoji = "😡";
@@ -548,6 +558,48 @@
       default:
         return;
     }
+
+    if (emoji) {
+      reactionCooldowns[context] = 10; // prevent duplicate immediately
+      const delay = rand(600, 2800);
+      setTimeout(() => {
+        if (!matchState.active) return;
+        spawnFloatingEmoji(emoji, true);
+        reactionCooldowns[context] = rand(3, 8);
+      }, delay);
+    }
+  }
+
+  function playerSendReaction(emoji) {
+    spawnFloatingEmoji(emoji, false);
+    playerEmojiCount++;
+    playerEmojiTimer = 2.5;
+
+    // Respond to emoji spam (3+ in a short window)
+    if (playerEmojiCount >= 3 && opponent && currentTurn !== "opponent") {
+      const p = opponent.personality;
+      const spamReply = p.trashTalk
+        ? (Math.random() < 0.5 ? "😡" : "😂")
+        : pickRandom(p.emojis);
+      const delay = rand(500, 1500);
+      setTimeout(() => {
+        if (!matchState.active) return;
+        spawnFloatingEmoji(spamReply, true);
+      }, delay);
+      playerEmojiCount = 0;
+      return;
+    }
+
+    // Occasional reply to single emoji
+    if (opponent && Math.random() < 0.35 && currentTurn !== "opponent") {
+      const delay = rand(800, 2500);
+      setTimeout(() => {
+        if (!matchState.active || currentTurn === "opponent") return;
+        const reply = pickRandom(opponent.personality.emojis);
+        spawnFloatingEmoji(reply, true);
+      }, delay);
+    }
+  }
 
     if (emoji) {
       reactionCooldown = rand(2.5, 6.0);
@@ -602,10 +654,6 @@
     const wrapper = document.querySelector(".game-wrapper");
     if (!wrapper) return;
 
-    // Opponent name under logo
-    const oppNameEl = createEl("div", { className: "bm-opp-name", id: "bm-opp-name" });
-    wrapper.appendChild(oppNameEl);
-
     matchHudEl = createEl("div", { className: "mp-hud", id: "bm-hud" });
     wrapper.appendChild(matchHudEl);
 
@@ -653,8 +701,20 @@
     if (!matchReactTray || !matchReactBtn || !matchHudEl) return;
     const btnRect = matchReactBtn.getBoundingClientRect();
     const hudRect = matchHudEl.getBoundingClientRect();
-    matchReactTray.style.top = (btnRect.top - hudRect.top - matchReactTray.offsetHeight - 8) + "px";
-    matchReactTray.style.left = (btnRect.left - hudRect.left + btnRect.width / 2 - matchReactTray.offsetWidth / 2) + "px";
+    const trayW = matchReactTray.offsetWidth || 240;
+    const trayH = matchReactTray.offsetHeight || 46;
+
+    let left = btnRect.left - hudRect.left + btnRect.width / 2 - trayW / 2;
+    left = Math.max(0, Math.min(left, matchHudEl.offsetWidth - trayW));
+
+    let top = btnRect.top - hudRect.top - trayH - 8;
+    if (top < -hudRect.top + 8) {
+      // Flip below if not enough space above
+      top = btnRect.bottom - hudRect.top + 8;
+    }
+
+    matchReactTray.style.top = top + "px";
+    matchReactTray.style.left = left + "px";
   }
 
   function updateMatchHUD() {
@@ -710,13 +770,6 @@
     matchCardEl.appendChild(turnPill);
 
     matchHudEl.insertBefore(matchCardEl, matchReactBtn);
-
-    // Update opponent name under logo
-    const oppNameDisplay = document.getElementById("bm-opp-name");
-    if (oppNameDisplay && opponent) {
-      oppNameDisplay.textContent = opponent.name;
-      oppNameDisplay.style.display = "";
-    }
   }
 
   function destroyMatchHUD() {
@@ -725,10 +778,6 @@
     }
     if (botStatusEl && botStatusEl.parentNode) {
       botStatusEl.parentNode.removeChild(botStatusEl);
-    }
-    const oppNameDisplay = document.getElementById("bm-opp-name");
-    if (oppNameDisplay && oppNameDisplay.parentNode) {
-      oppNameDisplay.parentNode.removeChild(oppNameDisplay);
     }
     matchHudEl = null;
     matchCardEl = null;
@@ -959,22 +1008,18 @@
   function update(dt) {
     if (!matchState.active || matchState.phase !== "playing") return;
 
-    if (reactionCooldown > 0) {
-      reactionCooldown -= dt;
+    if (reactionCooldowns) {
+      for (const k in reactionCooldowns) {
+        if (reactionCooldowns[k] > 0) reactionCooldowns[k] -= dt;
+      }
+    }
+    if (playerEmojiTimer > 0) {
+      playerEmojiTimer -= dt;
+      if (playerEmojiTimer <= 0) playerEmojiCount = 0;
     }
 
     if (currentTurn === "opponent" && !botHasShotThisTurn && opponent) {
       botPlanningTimer += dt;
-
-      // Refresh opponent aim pose every 600ms (expires after 800ms in game)
-      if (botPlanningTimer < botShotDelay && Math.floor(botPlanningTimer / 0.6) !== Math.floor((botPlanningTimer - dt) / 0.6)) {
-        const w = getWorld();
-        if (w && w.ball) {
-          window.dispatchEvent(new CustomEvent("tee:opponent-aim-update", {
-            detail: { ball: { x: w.ball.x, y: w.ball.y }, pointer: null, preview: null }
-          }));
-        }
-      }
 
       // Timeout guard: force shot after 15 seconds
       const forceShot = botPlanningTimer > 15.0;
@@ -1070,7 +1115,9 @@
     botPlanningTimer = 0;
     botShotDelay = 0;
     botHasShotThisTurn = false;
-    reactionCooldown = 0;
+    reactionCooldowns = {};
+    playerEmojiCount = 0;
+    playerEmojiTimer = 0;
   }
 
   // Tick handler registered with game loop
