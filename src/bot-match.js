@@ -487,20 +487,24 @@
     botHasShotThisTurn = true;
     if (botStatusEl) botStatusEl.textContent = "";
 
-    // Set opponent direction before swing
     const tg = window.TeeGame;
     const world = tg.getWorld();
     if (world) world.player.direction = launch.vx >= 0 ? 1 : -1;
 
-    // Trigger swing animation directly (no event dispatch)
+    // Single animation: aiming off, swing on, wait for contact frame, then launch
     tg.setOpponentAiming(false);
     tg.triggerOpponentSwing();
 
-    // Delay actual launch until swing reaches contact frame (7/18 fps ≈ 389ms)
+    const contactMs = launch.mode === "putt" ? 330 : 390;
     setTimeout(() => {
       if (!matchState.active) return;
+      // Guard: don't launch if swing was restarted
+      if (tg.getWorld && tg.getWorld()) {
+        const w = tg.getWorld();
+        if (w.holed) return;
+      }
       tg.botLaunch(launch.vx, launch.vy, launch.mode);
-    }, 390);
+    }, contactMs);
   }
 
   // --- Reaction System ---
@@ -914,15 +918,6 @@
     }
 
     updateMatchHUD();
-
-    // Delay opponent turn switch to let swing animation play (9 frames / 18 fps ≈ 500ms)
-    if (currentTurn === "opponent" && !holed) {
-      setTimeout(() => {
-        if (!matchState.active || currentTurn !== "opponent") return;
-        switchTurn();
-      }, 550);
-      return;
-    }
     switchTurn();
   }
 
