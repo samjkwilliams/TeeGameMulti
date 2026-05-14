@@ -623,9 +623,10 @@ const HOLES = [
     outfit.idle = new Image(); outfit.idle.decoding = "async";
     let loaded = 0;
     const onLoad = () => { loaded++; if (loaded >= 3) outfit.ready = true; };
-    outfit.swing.onload = onLoad; outfit.swing.src = set.swing;
-    outfit.putt.onload = onLoad; outfit.putt.src = set.putt;
-    outfit.idle.onload = onLoad; outfit.idle.src = set.idle;
+    const onError = () => { loaded++; if (loaded >= 3) outfit.ready = true; };
+    outfit.swing.onload = onLoad; outfit.swing.onerror = onError; outfit.swing.src = set.swing;
+    outfit.putt.onload = onLoad; outfit.putt.onerror = onError; outfit.putt.src = set.putt;
+    outfit.idle.onload = onLoad; outfit.idle.onerror = onError; outfit.idle.src = set.idle;
     if (outfit.swing.complete) loaded++;
     if (outfit.putt.complete) loaded++;
     if (outfit.idle.complete) loaded++;
@@ -2681,7 +2682,7 @@ const HOLES = [
       frameIndex = Math.min(Math.floor(p.timer * AIM_FPS), AIM_MAX_FRAME);
     } else {
       // Idle animation
-      playerAsset = outfit.idle;
+      playerAsset = outfit.idle || outfit.swing;
       const IDLE_FPS = 5;
       const IDLE_FRAMES = 12;
       frameIndex = Math.floor(p.idleTimer * IDLE_FPS) % IDLE_FRAMES;
