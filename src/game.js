@@ -2682,7 +2682,7 @@ const HOLES = [
       frameIndex = Math.min(Math.floor(p.timer * AIM_FPS), AIM_MAX_FRAME);
     } else {
       // Idle animation
-      playerAsset = outfit.idle || outfit.swing;
+      playerAsset = (outfit.idle && outfit.idle.naturalWidth > 0) ? outfit.idle : outfit.swing;
       const IDLE_FPS = 5;
       const IDLE_FRAMES = 12;
       frameIndex = Math.floor(p.idleTimer * IDLE_FPS) % IDLE_FRAMES;
@@ -3396,7 +3396,7 @@ const HOLES = [
     getGreenEnd: () => COURSE.greenEnd,
     isPuttLie: (ball) => isPuttLie(ball),
     setOpponentAiming: (v) => { opponentAiming = v; },
-    triggerOpponentSwing: () => { opponentSwingTimer = 0; opponentSwingFrame = 0; opponentAiming = false; opponentAimData = null; opponentAimGuide = []; },
+    triggerOpponentSwing: () => { if (opponentSwingFrame >= 0) return; opponentSwingTimer = 0; opponentSwingFrame = 0; opponentAiming = false; opponentAimData = null; opponentAimGuide = []; },
     getOpponentAimData: () => opponentAimData
   };
 

@@ -393,11 +393,6 @@
     botShotDelay = rand(opponent.shotDelayMin, opponent.shotDelayMax);
     botHasShotThisTurn = false;
     updateBotStatus();
-
-    // Show opponent aiming pose
-    if (window.TeeGame && window.TeeGame.setOpponentAiming) {
-      window.TeeGame.setOpponentAiming(true);
-    }
   }
 
   function updateBotStatus() {
