@@ -754,8 +754,9 @@
       turnPill.textContent = "Your Turn";
     } else {
       turnPill.classList.add("mp-opp-turn");
-      const short = (opponent?.name || "Opp").substring(0, 8);
-      turnPill.textContent = short + " Turn";
+      const name = opponent?.name || "Opp";
+      const short = name.length > 5 ? name.substring(0, 4) + "…" : name;
+      turnPill.textContent = short;
     }
     matchCardEl.appendChild(turnPill);
 
