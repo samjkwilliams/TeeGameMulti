@@ -601,15 +601,6 @@
     }
   }
 
-    if (emoji) {
-      reactionCooldown = rand(2.5, 6.0);
-      lastReactionContext = context;
-      setTimeout(() => {
-        spawnFloatingEmoji(emoji, true);
-      }, rand(400, 1200));
-    }
-  }
-
   function playerSendReaction(emoji) {
     spawnFloatingEmoji(emoji, false);
     if (opponent && Math.random() < 0.4) {
