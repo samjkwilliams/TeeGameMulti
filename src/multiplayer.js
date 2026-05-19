@@ -297,6 +297,8 @@
       status: "coin_toss"
     });
 
+    setTimeout(() => refreshRoomState(roomCode), 350);
+
     return true;
   }
 
@@ -415,6 +417,22 @@
         setTimeout(() => advanceToNextHole(), 1200);
       }
     }
+  }
+
+  async function refreshRoomState(code = roomCode) {
+    if (!supabase || !code) return;
+    const { data, error } = await supabase
+      .from("tee_rooms")
+      .select("*")
+      .eq("room_code", code)
+      .maybeSingle();
+
+    if (error || !data) {
+      if (error) console.warn("[TeeGame MP] Room refresh failed:", error.message);
+      return;
+    }
+
+    handleRoomUpdate(data);
   }
 
   function cleanupSubscriptions() {

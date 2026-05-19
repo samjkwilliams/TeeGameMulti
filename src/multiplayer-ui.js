@@ -827,6 +827,7 @@
 
     if (detail.status === "coin_toss") {
       hideLobbyPanel();
+      hideIntroModal();
       // Host triggers the coin toss
       if (MP.getMode() === "host") {
         setTimeout(() => MP.startCoinTossIfHost(), 600);
