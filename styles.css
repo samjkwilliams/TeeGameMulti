@@ -1917,7 +1917,14 @@ body.desktop #game {
   text-transform: uppercase;
 }
 
-.outfit-picker-subtitle,
+.outfit-picker-subtitle {
+  margin: 0;
+  color: var(--tg-gold-bright);
+  font-size: 18px;
+  font-weight: 700;
+  animation: mp-code-pulse 3s ease-in-out infinite;
+}
+
 .outfit-picker-countdown {
   margin: 0;
   color: var(--tg-muted);
