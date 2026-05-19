@@ -11,7 +11,7 @@
   const ROOM_CODE_LENGTH = 5;
   const MAX_CODE_ATTEMPTS = 8;
   const LIVE_AIM_INTERVAL = 66; // ~15 updates/sec throttle
-  const MATCH_LENGTH = 6;
+  const MATCH_LENGTH = 5;
   const COURSE_PAR = 3;
 
   let supabase = null;

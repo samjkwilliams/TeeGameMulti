@@ -7,7 +7,7 @@
   "use strict";
 
   const MP = window.TeeMultiplayer;
-  const MATCH_LENGTH = 6;
+  const MATCH_LENGTH = 5;
   const COURSE_PAR = 3;
 
   // ---------- DOM Creation ----------
@@ -36,11 +36,11 @@
     const parent = playButton.parentNode;
 
     // --- Find Match section ---
-    const findMatchSection = createElement("div", { className: "intro-section mp-intro-section" });
+    const findMatchSection = createElement("div", { className: "mp-intro-section" });
 
     const fmBtn = createElement("button", {
-      className: "intro-button mp-intro-btn",
-      textContent: "FIND MATCH →",
+      className: "intro-button intro-button-primary mp-intro-btn",
+      textContent: "FIND MATCH",
       onClick: () => {
         window.dispatchEvent(new CustomEvent("tee:bot-match-find"));
       }
@@ -49,11 +49,11 @@
     findMatchSection.appendChild(fmBtn);
 
     // --- Play a Friend section ---
-    const modeSection = createElement("div", { className: "intro-section mp-intro-section", id: "mp-intro-buttons" });
+    const modeSection = createElement("div", { className: "mp-intro-section", id: "mp-intro-buttons" });
 
     const playFriendBtn = createElement("button", {
-      className: "intro-button mp-intro-btn",
-      textContent: "PLAY A FRIEND →",
+      className: "intro-button intro-button-tertiary mp-intro-btn",
+      textContent: "PLAY A FRIEND",
       onClick: () => {
         window.dispatchEvent(new CustomEvent("tee:open-multiplayer-panel"));
       }
@@ -65,14 +65,16 @@
     const sections = parent.querySelectorAll(".intro-section");
     const lastSection = sections[sections.length - 1];
     if (lastSection) {
-      lastSection.after(findMatchSection);
-      findMatchSection.after(modeSection);
+      lastSection.after(modeSection);
+      modeSection.after(findMatchSection);
     } else {
       playButton.before(modeSection);
     }
 
-    // Update play button text
-    playButton.textContent = "PLAY SOLO →";
+    // Update play button text and keep solo as the first action.
+    playButton.classList.add("intro-button-primary");
+    if (lastSection) lastSection.after(playButton);
+    playButton.textContent = "PLAY SOLO";
   }
 
   // ---------- Lobby / Room Panel ----------

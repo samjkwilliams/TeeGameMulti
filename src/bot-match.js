@@ -7,7 +7,7 @@
 (() => {
   "use strict";
 
-  const MATCH_LENGTH = 7;
+  const MATCH_LENGTH = 5;
   const COURSE_PAR = 3;
   const GRAVITY = 9.81;
   const GREEN_ROLLING_RESISTANCE = 0.12;

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🏌</text></svg>">
     <title>Side Tee Physics Prototype</title>
-    <link rel="stylesheet" href="styles.css?v=14">
+    <link rel="stylesheet" href="styles.css?v=17">
   </head>
   <body class="phone">
     <div class="game-wrapper">
@@ -17,34 +17,36 @@
       <canvas id="game" aria-label="Side-on golf physics prototype"></canvas>
       <div class="intro-overlay" id="intro-modal">
         <div class="intro-panel">
-          <img src="tee-game-logo.svg" alt="Tee Game" class="intro-logo">
-          <div class="intro-section">
-            <h2>HOW TO PLAY</h2>
-            <p><strong>Hold</strong> and <strong>drag</strong> anywhere to aim.<br>Check your aim on the minimap line.<br><strong>Release</strong> to shoot.</p>
+          <div class="intro-hero">
+            <img src="hero.png" alt="Tee Game outfit lineup" class="intro-hero-image">
+            <div class="intro-hero-content">
+              <img src="tee-game-logo.svg" alt="Tee Game" class="intro-logo">
+              <p class="intro-kicker">5-hole outfit challenge</p>
+            </div>
           </div>
-          <div class="intro-section">
-            <h2>THE CHALLENGE</h2>
-            <p>Unlock the remaining outfits<br>over the next <strong>5</strong> holes.</p>
+          <div class="intro-section intro-brief">
+            <h2>DRAG. AIM. RELEASE.</h2>
+            <p>Play the course and unlock the full fit.</p>
           </div>
-          <div class="intro-section">
-            <h2>YOUR PLAYER IS WEARING</h2>
+          <div class="intro-section intro-fit-section">
+            <h2>STARTING FIT</h2>
             <div class="product-grid">
               <a href="https://teegame.com.au/collections/headwear/products/primo-cursive-hat-white-navy" target="_blank" class="product-item">
                 <img src="https://teegame.com.au/cdn/shop/files/WhiteNavyCursiveHat-1.webp?v=1773202832" alt="Primo Cursive Hat White Navy">
-                <p>PRIMO CURSIVE HAT<br><strong>WHITE NAVY</strong></p>
+                <p>CURSIVE HAT<br><strong>WHITE NAVY</strong></p>
               </a>
               <a href="https://teegame.com.au/collections/golf-outerwear/products/primo-golf-hoodie-light-grey" target="_blank" class="product-item">
                 <img src="https://teegame.com.au/cdn/shop/files/PrimoHoodieLightGray-5-5.webp?v=1773211139" alt="Primo Golf Hoodie Light Grey">
-                <p>PRIMO GOLF HOODIE<br><strong>LIGHT GREY</strong></p>
+                <p>GOLF HOODIE<br><strong>LIGHT GREY</strong></p>
               </a>
               <a href="https://teegame.com.au/collections/golf-shorts/products/primo-golf-shorts" target="_blank" class="product-item">
                 <img src="https://teegame.com.au/cdn/shop/files/SageShortsPDP-2-2.webp?v=1774682526" alt="Primo Golf Shorts 7&quot; Sage Green">
-                <p>PRIMO GOLF SHORTS 7"<br><strong>SAGE GREEN</strong></p>
+                <p>GOLF SHORTS<br><strong>SAGE GREEN</strong></p>
               </a>
             </div>
           </div>
-        <button type="button" id="play-button" class="intro-button">PLAY HOLE 1 <span>→</span></button>
-      </div>
+          <button type="button" id="play-button" class="intro-button">PLAY HOLE 1</button>
+        </div>
       </div>
       <div class="hole-advance-overlay" id="hole-advance-modal">
         <div class="hole-advance-panel">
@@ -100,6 +102,13 @@
           <div class="advance-summary" id="hole-advance-summary">
             <h1 class="advance-heading advance-heading-champion">CHAMPION!</h1>
             <p class="advance-hole-title">ALL 5 HOLES COMPLETE</p>
+            <div class="advance-summary-hero">
+              <img src="hero.png" alt="Tee Game outfit lineup">
+              <div class="advance-summary-hero-copy">
+                <span>FULL LINEUP UNLOCKED</span>
+                <strong>Shop the fits from your round.</strong>
+              </div>
+            </div>
             <div class="advance-final-score" data-advance-final-score>85</div>
             <div class="advance-stats">
               <div class="stat-card">
@@ -123,12 +132,12 @@
                 <span class="stat-label">TOTAL YARDS</span>
               </div>
             </div>
-            <button type="button" id="hole-advance-bonus" class="advance-continue-button advance-bonus-button">BONUS HOLE →</button>
+            <button type="button" id="hole-advance-bonus" class="advance-continue-button advance-bonus-button">BONUS HOLE</button>
+            <a href="https://teegame.com.au" target="_blank" class="advance-continue-button advance-shop-button">SHOP THE FIT</a>
             <button type="button" id="hole-advance-retry" class="advance-continue-button advance-retry-button">PLAY AGAIN</button>
-            <a href="https://teegame.com.au" target="_blank" class="advance-continue-button advance-shop-button">VISIT THE SHOP →</a>
           </div>
           <button type="button" id="hole-advance-continue" class="advance-continue-button advance-next-button">
-            <span data-advance-continue-text>CONTINUE TO HOLE 2 →</span>
+            <span data-advance-continue-text>CONTINUE TO HOLE 2</span>
           </button>
         </div>
       </div>
@@ -147,9 +156,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="src/supabase-config.js?v=2"></script>
     <script src="src/sky-system.js?v=7"></script>
-    <script src="src/multiplayer.js?v=3"></script>
-    <script src="src/multiplayer-ui.js?v=4"></script>
-    <script src="src/game.js?v=23"></script>
-    <script src="src/bot-match.js?v=16"></script>
+    <script src="src/multiplayer.js?v=4"></script>
+    <script src="src/multiplayer-ui.js?v=6"></script>
+    <script src="src/game.js?v=25"></script>
+    <script src="src/bot-match.js?v=17"></script>
   </body>
 </html>

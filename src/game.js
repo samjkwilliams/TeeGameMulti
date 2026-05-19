@@ -68,6 +68,7 @@
   const FORCE_SETTLE_SPEED = 0.42;
   const FORCE_SETTLE_SECONDS = 0.78;
   const COURSE_PAR = 3;
+  const ACTIVE_HOLE_COUNT = 5;
   const HOLE_SPINNER_DELAY = 2.85;
   const MAX_PHYSICS_STEPS_PER_FRAME = 5;
   const LOW_POWER_RENDER = true;
@@ -740,7 +741,7 @@ const HOLES = [
 
       // Check if hole changed
       const newHoleIndex = detail.holeIndex;
-      if (newHoleIndex !== undefined && newHoleIndex !== currentHoleIndex && newHoleIndex < HOLES.length) {
+      if (newHoleIndex !== undefined && newHoleIndex !== currentHoleIndex && newHoleIndex < ACTIVE_HOLE_COUNT) {
         setHole(newHoleIndex);
         world.holed = false;
         world.holeTransitionShown = false;
@@ -782,7 +783,7 @@ const HOLES = [
     if (detail.status === "playing") {
       // Check if hole changed
       const newHoleIndex = detail.holeIndex;
-      if (newHoleIndex !== undefined && newHoleIndex !== currentHoleIndex && newHoleIndex < HOLES.length) {
+      if (newHoleIndex !== undefined && newHoleIndex !== currentHoleIndex && newHoleIndex < ACTIVE_HOLE_COUNT) {
         setHole(newHoleIndex);
         world.holed = false;
         world.holeTransitionShown = false;
@@ -1950,7 +1951,7 @@ const HOLES = [
   }
 
   function setHole(index) {
-    currentHoleIndex = (index + HOLES.length) % HOLES.length;
+    currentHoleIndex = (index + ACTIVE_HOLE_COUNT) % ACTIVE_HOLE_COUNT;
     currentCourse = HOLES[currentHoleIndex];
     terrainKnots = currentCourse.terrainKnots;
     world = createWorld();
@@ -1969,7 +1970,7 @@ const HOLES = [
 
   function syncHoleUi() {
     if (holeCounter) {
-      holeCounter.textContent = `${currentHoleIndex + 1}/${HOLES.length}`;
+      holeCounter.textContent = `${currentHoleIndex + 1}/${ACTIVE_HOLE_COUNT}`;
     }
   }
 
@@ -2971,7 +2972,7 @@ const HOLES = [
     ctx.fillStyle = "rgb(20 31 29 / 0.28)";
     const toPin = COURSE.holeX - world.ball.x;
     const lie = world.holed ? "holed" : `${Math.abs(toPin).toFixed(1)}m ${toPin < -0.3 ? "long" : "to pin"}`;
-    ctx.fillText(`hole ${currentHoleIndex + 1}/${HOLES.length} · strokes ${world.strokes} · ${lie}`, 14, height - 16);
+    ctx.fillText(`hole ${currentHoleIndex + 1}/${ACTIVE_HOLE_COUNT} · strokes ${world.strokes} · ${lie}`, 14, height - 16);
     if (world.messageTimer > 0) {
       ctx.font = "700 18px ui-sans-serif, system-ui, sans-serif";
       ctx.fillStyle = "rgb(255 255 255 / 0.92)";
@@ -3285,11 +3286,11 @@ const HOLES = [
     const mins = Math.floor(totalSecs / 60);
     const secs = totalSecs % 60;
     const timeText = String(mins).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
-    const totalOutfits = HOLES.length;
+    const totalOutfits = OUTFIT_SETS.length;
     const outfitsUnlocked = Math.min(holeNum + 1, totalOutfits);
     const remainingOutfits = totalOutfits - outfitsUnlocked;
     const nextHole = holeNum + 1;
-    const isLastHole = holeNum >= HOLES.length;
+    const isLastHole = holeNum >= ACTIVE_HOLE_COUNT;
 
     gameStats.totalStrokes += world.strokes;
     gameStats.totalTime += world.holeTimer;
@@ -3315,9 +3316,8 @@ const HOLES = [
       const tSecs = totalSecsAll % 60;
       const totalTimeText = String(tMins).padStart(2, "0") + ":" + String(tSecs).padStart(2, "0");
       const bestScoreText = gameStats.bestScore <= 0 ? String(gameStats.bestScore) : "+" + gameStats.bestScore;
-      const finalScore = Math.round(clamp(100 - (gameStats.totalStrokes - 5) * 3.5, 0, 100));
-      const isBonusAvailable = currentHoleIndex === HOLES.length - 2;
-      if (holeAdvanceBonus) holeAdvanceBonus.style.display = isBonusAvailable ? "" : "none";
+      const finalScore = Math.round(clamp(100 - (gameStats.totalStrokes - ACTIVE_HOLE_COUNT) * 3.5, 0, 100));
+      if (holeAdvanceBonus) holeAdvanceBonus.style.display = "none";
       setText("[data-advance-final-score]", finalScore);
       setText("[data-advance-total-score]", totalScoreText);
       setText("[data-advance-total-time]", totalTimeText);
@@ -3335,7 +3335,7 @@ const HOLES = [
       setText("[data-advance-outfits]", outfitsUnlocked + "/" + totalOutfits);
       setText("[data-advance-outfits-unlocked]", "You've unlocked " + outfitsUnlocked + " of " + totalOutfits + " outfits.");
       setText("[data-advance-outfits-remaining]", remainingOutfits + " more to unlock.");
-      setText("[data-advance-continue-text]", "CONTINUE TO HOLE " + nextHole + " →");
+      setText("[data-advance-continue-text]", "CONTINUE TO HOLE " + nextHole);
 
       const progressSegments = holeAdvanceModal.querySelectorAll("[data-progress-segment]");
       progressSegments.forEach((seg, i) => {
@@ -3371,7 +3371,7 @@ const HOLES = [
       return;
     }
     hideHoleAdvance();
-    if (currentHoleIndex + 1 >= HOLES.length) {
+    if (currentHoleIndex + 1 >= ACTIVE_HOLE_COUNT) {
       showIntro();
       setHole(0);
       return;
@@ -3391,7 +3391,7 @@ const HOLES = [
     terrainSlope: (x) => terrainSlope(x),
     terrainHeight: (x) => terrainHeight(x),
     getCurrentHoleIndex: () => currentHoleIndex,
-    getHoles: () => HOLES,
+    getHoles: () => HOLES.slice(0, ACTIVE_HOLE_COUNT),
     getHoleX: () => COURSE.holeX,
     getGreenStart: () => COURSE.greenStart,
     getGreenEnd: () => COURSE.greenEnd,
