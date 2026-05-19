@@ -1401,8 +1401,11 @@ body.desktop #game {
 }
 
 .intro-overlay {
-  align-items: start;
-  padding-top: 68px;
+  padding-top: 8px;
+}
+
+.intro-overlay .intro-panel {
+  transform: translateY(-18px);
 }
 
 .intro-panel,
