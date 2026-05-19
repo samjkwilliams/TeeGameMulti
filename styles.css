@@ -771,15 +771,22 @@ body.desktop #game {
 /* ── Room Code Block ── */
 
 .mp-code-block {
-  font-size: 36px;
+  font-size: 48px;
   font-weight: 800;
   letter-spacing: 0.15em;
   color: #f0b95d;
+  text-shadow: 0 0 18px rgb(240 185 93 / 0.35);
   margin: 12px 0;
   padding: 12px;
   background: rgb(240 185 93 / 0.08);
   border: 1px solid rgb(240 185 93 / 0.25);
   border-radius: 12px;
+  animation: mp-code-pulse 3s ease-in-out infinite;
+}
+
+@keyframes mp-code-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
 }
 
 /* ── Button Row ── */
@@ -1193,7 +1200,7 @@ body.desktop #game {
   }
 
   .mp-code-block {
-    font-size: 28px;
+    font-size: 36px;
   }
 }
 
@@ -1851,6 +1858,7 @@ body.desktop #game {
   background: rgb(239 182 78 / 0.1);
   color: var(--tg-gold-bright);
   letter-spacing: 0;
+  animation: mp-code-pulse 3s ease-in-out infinite;
 }
 
 .bm-spinner {
