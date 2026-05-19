@@ -1883,7 +1883,7 @@ body.desktop #game {
 .outfit-picker-panel {
   width: min(100%, 420px);
   max-height: calc(100vh - 28px);
-  overflow: hidden;
+  overflow: visible;
   padding: 18px;
   border: 1px solid var(--tg-line-warm);
   border-radius: 26px;
@@ -1920,12 +1920,12 @@ body.desktop #game {
 .outfit-picker-stage {
   position: relative;
   display: grid;
-  grid-template-columns: 0.72fr 1.2fr 0.72fr;
+  grid-template-columns: 0.8fr 1.4fr 0.8fr;
   align-items: center;
-  gap: 8px;
-  height: 310px;
+  gap: 4px;
+  height: 230px;
   margin: 12px 0 10px;
-  overflow: hidden;
+  overflow: visible;
   touch-action: pan-y;
 }
 
@@ -1941,13 +1941,14 @@ body.desktop #game {
 }
 
 .outfit-sprite {
-  width: min(100%, 210px);
+  width: min(100%, 512px);
   aspect-ratio: 1 / 1;
   background-repeat: no-repeat;
-  background-size: 400% 300%;
+  background-size: 400% 400%;
   animation: outfit-idle-preview 2.4s steps(1) infinite;
   filter: drop-shadow(0 16px 24px rgb(0 0 0 / 0.34));
   pointer-events: none;
+  transform: translateY(-114px);
 }
 
 @keyframes outfit-idle-preview {
@@ -1955,14 +1956,14 @@ body.desktop #game {
   8.333% { background-position: 33.333% 0%; }
   16.666% { background-position: 66.666% 0%; }
   25% { background-position: 100% 0%; }
-  33.333% { background-position: 0% 50%; }
-  41.666% { background-position: 33.333% 50%; }
-  50% { background-position: 66.666% 50%; }
-  58.333% { background-position: 100% 50%; }
-  66.666% { background-position: 0% 100%; }
-  75% { background-position: 33.333% 100%; }
-  83.333% { background-position: 66.666% 100%; }
-  91.666%, 100% { background-position: 100% 100%; }
+  33.333%  { background-position: 0% 33.333%; }
+  41.666%  { background-position: 33.333% 33.333%; }
+  50%      { background-position: 66.666% 33.333%; }
+  58.333%  { background-position: 100% 33.333%; }
+  66.666%  { background-position: 0% 66.666%; }
+  75%      { background-position: 33.333% 66.666%; }
+  83.333%  { background-position: 66.666% 66.666%; }
+  91.666%, 100% { background-position: 100% 66.666%; }
 }
 
 .outfit-card span {
@@ -1975,12 +1976,17 @@ body.desktop #game {
 
 .outfit-card-side {
   opacity: 0.34;
-  transform: scale(0.82);
+  transform: scale(0.7);
 }
 
 .outfit-card-active {
   opacity: 1;
   transform: scale(1);
+}
+
+.outfit-card-active .outfit-sprite {
+  width: 360px;
+  transform: translateY(-114px);
 }
 
 .outfit-opponent-badge {
@@ -2086,11 +2092,7 @@ body.desktop #game {
   }
 
   .outfit-picker-stage {
-    height: 260px;
-  }
-
-  .outfit-sprite {
-    width: min(100%, 178px);
+    height: 180px;
   }
 }
 
