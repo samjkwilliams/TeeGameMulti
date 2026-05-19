@@ -1420,7 +1420,7 @@ body.desktop #game {
 .intro-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 9px;
   max-width: 430px;
   max-height: calc(100vh - 24px);
   overflow-x: hidden;
@@ -1431,7 +1431,7 @@ body.desktop #game {
 
 .intro-hero {
   position: relative;
-  min-height: 255px;
+  min-height: 235px;
   border-radius: 22px;
   overflow: hidden;
   isolation: isolate;
@@ -1464,11 +1464,11 @@ body.desktop #game {
   z-index: 2;
   display: flex;
   height: 100%;
-  min-height: 255px;
+  min-height: 235px;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  padding: 22px 18px 18px;
+  padding: 18px 18px 14px;
   box-sizing: border-box;
 }
 
@@ -1480,8 +1480,8 @@ body.desktop #game {
 }
 
 .intro-logo {
-  width: 170px;
-  margin: 0 0 10px;
+  width: 158px;
+  margin: 0 0 7px;
 }
 
 .intro-kicker {
@@ -1534,7 +1534,7 @@ body.desktop #game {
 }
 
 .intro-fit-section {
-  padding: 10px 0 0;
+  padding: 8px 0 0;
   border-top: 1px solid var(--tg-line);
 }
 
@@ -1546,7 +1546,7 @@ body.desktop #game {
 
 .product-grid {
   gap: 8px;
-  margin-top: 9px;
+  margin-top: 7px;
 }
 
 .product-item {
