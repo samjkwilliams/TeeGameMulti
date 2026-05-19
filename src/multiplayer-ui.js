@@ -39,7 +39,7 @@
     const findMatchSection = createElement("div", { className: "mp-intro-section" });
 
     const fmBtn = createElement("button", {
-      className: "intro-button intro-button-primary mp-intro-btn",
+      className: "intro-button intro-button-match mp-intro-btn",
       textContent: "FIND MATCH",
       onClick: () => {
         window.dispatchEvent(new CustomEvent("tee:open-bot-outfit-picker"));
