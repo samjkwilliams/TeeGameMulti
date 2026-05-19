@@ -209,7 +209,7 @@
       const badge = opponentIndex === index ? '<span class="outfit-opponent-badge">Opponent picked</span>' : "";
       return createElement("div", {
         className: "outfit-card outfit-card-" + slot,
-        innerHTML: badge + '<img src="' + OUTFIT_IDLE_SRCS[index] + '" alt="' + outfitLabel(index) + '"><span>' + outfitLabel(index) + '</span>'
+        innerHTML: badge + '<div class="outfit-sprite" role="img" aria-label="' + outfitLabel(index) + '" style="background-image:url(' + OUTFIT_IDLE_SRCS[index] + ')"></div><span>' + outfitLabel(index) + '</span>'
       });
     };
 
