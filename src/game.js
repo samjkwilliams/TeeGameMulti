@@ -2652,7 +2652,22 @@ const HOLES = [
     // Don't draw player during ball flight unless animating a swing, or it's the opponent's turn
     if (!world.ball.asleep && !p.animating && !isOppTurn) return;
 
-    const outfitIndex = Math.min(currentHoleIndex, OUTFIT_SETS.length - 1);
+    let outfitIndex = Math.min(currentHoleIndex, OUTFIT_SETS.length - 1);
+    if (isMultiplayerActive() && window.TeeMultiplayer) {
+      const state = isOppTurn
+        ? window.TeeMultiplayer.getOpponentPlayerState?.()
+        : window.TeeMultiplayer.getLocalPlayerState?.();
+      if (state && state.outfitIndex !== undefined) {
+        outfitIndex = Math.max(0, Math.min(Number(state.outfitIndex) || 0, OUTFIT_SETS.length - 1));
+      }
+    } else if (isBotMatchActive() && window.TeeBotMatch) {
+      const selected = isOppTurn
+        ? window.TeeBotMatch.getOpponentOutfitIndex?.()
+        : window.TeeBotMatch.getPlayerOutfitIndex?.();
+      if (selected !== undefined) {
+        outfitIndex = Math.max(0, Math.min(Number(selected) || 0, OUTFIT_SETS.length - 1));
+      }
+    }
     const outfit = assets.outfits[outfitIndex];
     if (!outfit || !outfit.ready) return;
 

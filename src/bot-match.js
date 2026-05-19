@@ -67,6 +67,8 @@
   let reactionCooldowns = {};
   let playerBallState = null;
   let opponentBallState = null;
+  let playerOutfitIndex = 0;
+  let opponentOutfitIndex = 1;
 
   // --- UI Elements ---
 
@@ -1083,6 +1085,16 @@
     showMatchmaking();
   });
 
+  window.addEventListener("tee:bot-match-find-confirmed", (event) => {
+    if (matchState.active && matchState.phase === "playing") return;
+    resetState();
+    playerOutfitIndex = normalizeOutfitIndex(event.detail?.outfitIndex);
+    opponentOutfitIndex = normalizeOutfitIndex(playerOutfitIndex + 1 + Math.floor(Math.random() * 4));
+    matchState.phase = "searching";
+    matchState.active = true;
+    showMatchmaking();
+  });
+
   function resetState() {
     matchState = { active: false, phase: "idle" };
     opponent = null;
@@ -1102,6 +1114,12 @@
     playerEmojiTimer = 0;
   }
 
+  function normalizeOutfitIndex(index) {
+    const n = Number(index);
+    if (!Number.isFinite(n)) return 0;
+    return ((Math.round(n) % 5) + 5) % 5;
+  }
+
   // Tick handler registered with game loop
   window.addEventListener("tee:frame-tick", (e) => {
     if (e.detail && e.detail.dt) {
@@ -1117,6 +1135,8 @@
     getOpponent,
     getCurrentTurn,
     getHoleIndex,
+    getPlayerOutfitIndex: () => playerOutfitIndex,
+    getOpponentOutfitIndex: () => opponentOutfitIndex,
     startMatch,
     endMatch,
     update,

@@ -13,6 +13,8 @@
   const LIVE_AIM_INTERVAL = 66; // ~15 updates/sec throttle
   const MATCH_LENGTH = 5;
   const COURSE_PAR = 3;
+  const OUTFIT_COUNT = 5;
+  const OUTFIT_SELECT_TIMEOUT_MS = 30000;
 
   let supabase = null;
   let channel = null;
@@ -136,9 +138,10 @@
   function makeInitialState(hostId, hostName) {
     return {
       matchLength: MATCH_LENGTH,
-      holes: [0, 1, 2, 3, 4, 5],
+      holes: [0, 1, 2, 3, 4],
       par: COURSE_PAR,
       coinToss: { winnerId: null, seed: null, completedAt: null },
+      outfitSelection: { startedAt: null, deadlineAt: null },
       players: {
         [hostId]: makePlayerState(hostId, hostName, "host")
       },
@@ -153,6 +156,8 @@
       role,
       connected: true,
       ready: true,
+      outfitIndex: 0,
+      outfitConfirmedAt: null,
       totalStrokes: 0,
       currentHoleStrokes: 0,
       holed: false,
@@ -267,13 +272,14 @@
     // Add guest player to state
     state.players = state.players || {};
     state.players[userId] = makePlayerState(userId, playerName, "guest");
+    ensureOutfitSelection(state);
 
     const { error: updateError } = await supabase
       .from("tee_rooms")
       .update({
         guest_id: userId,
         guest_name: playerName,
-        status: "coin_toss",
+        status: "lobby",
         state
       })
       .eq("room_code", room.room_code);
@@ -294,7 +300,7 @@
       mode,
       roomCode,
       state: roomState,
-      status: "coin_toss"
+      status: "outfit_select"
     });
 
     setTimeout(() => refreshRoomState(roomCode), 350);
@@ -333,6 +339,101 @@
 
     if (error) {
       console.error("[TeeGame MP] Coin toss update failed:", error.message);
+    }
+  }
+
+  function ensureOutfitSelection(state, startClock = true) {
+    state.outfitSelection = state.outfitSelection || {};
+    const hasBothPlayers = Object.keys(state.players || {}).length >= 2;
+    if (startClock && hasBothPlayers && !state.outfitSelection.startedAt) {
+      const startedAt = Date.now();
+      state.outfitSelection.startedAt = startedAt;
+      state.outfitSelection.deadlineAt = startedAt + OUTFIT_SELECT_TIMEOUT_MS;
+    } else if (state.outfitSelection.startedAt && !state.outfitSelection.deadlineAt) {
+      state.outfitSelection.deadlineAt = state.outfitSelection.startedAt + OUTFIT_SELECT_TIMEOUT_MS;
+    }
+    state.players = state.players || {};
+    for (const player of Object.values(state.players)) {
+      if (player.outfitIndex === undefined || player.outfitIndex === null) player.outfitIndex = 0;
+      if (player.outfitConfirmedAt === undefined) player.outfitConfirmedAt = null;
+    }
+    return state.outfitSelection;
+  }
+
+  function clampOutfitIndex(index) {
+    const n = Number(index);
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(Math.round(n), OUTFIT_COUNT - 1));
+  }
+
+  async function confirmOutfit(index) {
+    if (!isEnabled() || !supabase || !roomCode || !userId) return false;
+    const state = { ...(roomState || {}) };
+    state.players = { ...(state.players || {}) };
+    ensureOutfitSelection(state, Object.keys(state.players).length >= 2);
+    const player = { ...(state.players[userId] || makePlayerState(userId, playerName, localRole || mode)) };
+    player.outfitIndex = clampOutfitIndex(index);
+    player.outfitConfirmedAt = Date.now();
+    state.players[userId] = player;
+
+    const { error } = await supabase
+      .from("tee_rooms")
+      .update({ state })
+      .eq("room_code", roomCode);
+
+    if (error) {
+      console.error("[TeeGame MP] Outfit confirm failed:", error.message);
+      emitEvent("multiplayer-error", { code: "OUTFIT_FAILED", message: "Could not save outfit choice." });
+      return false;
+    }
+
+    roomState = state;
+    emitEvent("multiplayer-state", {
+      mode,
+      roomCode,
+      state: roomState,
+      status: "outfit_select",
+      activePlayerId,
+      holeIndex,
+      turnNumber
+    });
+    if (mode === "host") maybeAdvanceOutfitSelection();
+    return true;
+  }
+
+  async function maybeAdvanceOutfitSelection() {
+    if (mode !== "host" || !roomCode || !roomState) return;
+    if (roomState.status && roomState.status !== "outfit_select") return;
+
+    const state = { ...roomState };
+    ensureOutfitSelection(state);
+    state.players = { ...(state.players || {}) };
+    const ids = Object.keys(state.players);
+    if (ids.length < 2) return;
+
+    const now = Date.now();
+    const deadlineAt = state.outfitSelection.deadlineAt || now;
+    const timedOut = now >= deadlineAt;
+    const allConfirmed = ids.every(id => state.players[id]?.outfitConfirmedAt);
+    if (!allConfirmed && !timedOut) {
+      setTimeout(() => maybeAdvanceOutfitSelection(), Math.min(deadlineAt - now, 1000));
+      return;
+    }
+
+    ids.forEach((id) => {
+      const player = { ...state.players[id] };
+      player.outfitIndex = clampOutfitIndex(player.outfitIndex);
+      if (!player.outfitConfirmedAt) player.outfitConfirmedAt = now;
+      state.players[id] = player;
+    });
+
+    const { error } = await supabase
+      .from("tee_rooms")
+      .update({ status: "coin_toss", state })
+      .eq("room_code", roomCode);
+
+    if (error) {
+      console.error("[TeeGame MP] Outfit selection advance failed:", error.message);
     }
   }
 
@@ -393,7 +494,10 @@
     activePlayerId = newData.active_player_id || null;
     holeIndex = newData.hole_index ?? holeIndex;
     turnNumber = newData.turn_number ?? turnNumber;
-    const newStatus = newData.status;
+    const hasOutfitSelection = newData.status === "lobby"
+      && Object.keys(roomState.players || {}).length >= 2
+      && roomState.outfitSelection?.startedAt;
+    const newStatus = hasOutfitSelection ? "outfit_select" : newData.status;
 
     emitEvent("multiplayer-state", {
       mode,
@@ -411,6 +515,9 @@
 
     // Host checks if both players holed — advance hole
     if (mode === "host" && roomState) {
+      if (newStatus === "outfit_select") {
+        maybeAdvanceOutfitSelection();
+      }
       const players = roomState.players || {};
       const ids = Object.keys(players);
       if (ids.length === 2 && ids.every(id => players[id]?.holed)) {
@@ -735,6 +842,8 @@
     leaveRoom,
     startCoinTossIfHost,
     startMatchFromRoom,
+    confirmOutfit,
+    maybeAdvanceOutfitSelection,
     submitLiveAim,
     clearLiveAim,
     submitShotStart,

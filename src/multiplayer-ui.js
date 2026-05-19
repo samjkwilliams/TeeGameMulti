@@ -42,7 +42,7 @@
       className: "intro-button intro-button-primary mp-intro-btn",
       textContent: "FIND MATCH",
       onClick: () => {
-        window.dispatchEvent(new CustomEvent("tee:bot-match-find"));
+        window.dispatchEvent(new CustomEvent("tee:open-bot-outfit-picker"));
       }
     });
 
@@ -80,6 +80,12 @@
   // ---------- Lobby / Room Panel ----------
 
   let lobbyPanel = null;
+  let outfitPicker = null;
+  let outfitPickerMode = "friend";
+  let outfitIndex = 0;
+  let outfitTimer = null;
+  const OUTFIT_COUNT = 5;
+  const OUTFIT_IDLE_SRCS = ["Outfit01_Idle.png", "Outfit02_Idle.png", "Outfit03_Idle.png", "Outfit04_Idle.png", "Outfit05_Idle.png"];
 
   function createLobbyPanel() {
     if (lobbyPanel) return lobbyPanel;
@@ -109,6 +115,140 @@
     if (lobbyPanel) {
       lobbyPanel.overlay.classList.remove("visible");
     }
+  }
+
+  function createOutfitPicker() {
+    if (outfitPicker) return outfitPicker;
+    const wrapper = document.querySelector(".game-wrapper");
+    if (!wrapper) return null;
+
+    const overlay = createElement("div", { className: "outfit-picker-overlay", id: "outfit-picker-overlay" });
+    const panel = createElement("div", { className: "outfit-picker-panel" });
+    overlay.appendChild(panel);
+    wrapper.appendChild(overlay);
+    outfitPicker = { overlay, panel };
+    return outfitPicker;
+  }
+
+  function normalizeOutfitIndex(index) {
+    return (index + OUTFIT_COUNT) % OUTFIT_COUNT;
+  }
+
+  function outfitLabel(index) {
+    return "Outfit " + String(index + 1).padStart(2, "0");
+  }
+
+  function getOpponentOutfitIndex() {
+    const opponent = MP.getOpponentPlayerState && MP.getOpponentPlayerState();
+    return opponent && opponent.outfitConfirmedAt ? opponent.outfitIndex : null;
+  }
+
+  function getOutfitDeadlineText() {
+    const state = MP.getRoomState && MP.getRoomState();
+    const deadlineAt = state?.outfitSelection?.deadlineAt;
+    if (!deadlineAt) return "";
+    const seconds = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
+    return "Auto-start in " + seconds;
+  }
+
+  function showOutfitPicker(mode = "friend") {
+    const picker = createOutfitPicker();
+    if (!picker) return;
+    outfitPickerMode = mode;
+    picker.overlay.classList.add("visible");
+    renderOutfitPicker();
+    startOutfitCountdown();
+  }
+
+  function hideOutfitPicker() {
+    if (outfitPicker) outfitPicker.overlay.classList.remove("visible");
+    if (outfitTimer) {
+      clearInterval(outfitTimer);
+      outfitTimer = null;
+    }
+  }
+
+  function startOutfitCountdown() {
+    if (outfitTimer) clearInterval(outfitTimer);
+    outfitTimer = setInterval(() => {
+      if (!outfitPicker?.overlay.classList.contains("visible")) return;
+      const countdown = outfitPicker.panel.querySelector("[data-outfit-countdown]");
+      if (countdown) countdown.textContent = getOutfitDeadlineText();
+    }, 250);
+  }
+
+  function shiftOutfit(delta) {
+    outfitIndex = normalizeOutfitIndex(outfitIndex + delta);
+    renderOutfitPicker();
+  }
+
+  function renderOutfitPicker(confirmed = false) {
+    const picker = createOutfitPicker();
+    if (!picker) return;
+    const opponentIndex = getOpponentOutfitIndex();
+    const roomCode = MP.getRoomCode && MP.getRoomCode();
+    const prev = normalizeOutfitIndex(outfitIndex - 1);
+    const next = normalizeOutfitIndex(outfitIndex + 1);
+
+    picker.panel.innerHTML = "";
+    picker.panel.appendChild(createElement("img", { src: "tee-game-logo.svg", className: "outfit-picker-logo", alt: "Tee Game" }));
+    picker.panel.appendChild(createElement("h2", { className: "outfit-picker-heading", textContent: "Pick Your Golfer" }));
+    const deadlineText = getOutfitDeadlineText();
+    picker.panel.appendChild(createElement("p", {
+      className: "outfit-picker-subtitle",
+      textContent: roomCode
+        ? "Room " + roomCode + (deadlineText ? " · " + deadlineText : " · Waiting for player")
+        : "Choose your match fit"
+    }));
+
+    const stage = createElement("div", { className: "outfit-picker-stage" });
+    const leftBtn = createElement("button", { className: "outfit-arrow outfit-arrow-left", textContent: "‹", onClick: () => shiftOutfit(-1), "aria-label": "Previous outfit" });
+    const rightBtn = createElement("button", { className: "outfit-arrow outfit-arrow-right", textContent: "›", onClick: () => shiftOutfit(1), "aria-label": "Next outfit" });
+
+    const makeCard = (index, slot) => {
+      const badge = opponentIndex === index ? '<span class="outfit-opponent-badge">Opponent picked</span>' : "";
+      return createElement("div", {
+        className: "outfit-card outfit-card-" + slot,
+        innerHTML: badge + '<img src="' + OUTFIT_IDLE_SRCS[index] + '" alt="' + outfitLabel(index) + '"><span>' + outfitLabel(index) + '</span>'
+      });
+    };
+
+    stage.appendChild(makeCard(prev, "side"));
+    stage.appendChild(makeCard(outfitIndex, "active"));
+    stage.appendChild(makeCard(next, "side"));
+    stage.appendChild(leftBtn);
+    stage.appendChild(rightBtn);
+    picker.panel.appendChild(stage);
+
+    const countdown = createElement("p", { className: "outfit-picker-countdown", textContent: getOutfitDeadlineText() });
+    countdown.setAttribute("data-outfit-countdown", "");
+    picker.panel.appendChild(countdown);
+
+    const confirmBtn = createElement("button", {
+      className: "intro-button outfit-confirm-btn",
+      textContent: confirmed ? "FIT CONFIRMED" : "CONFIRM FIT",
+      onClick: async () => {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "CONFIRMING";
+        if (outfitPickerMode === "bot") {
+          hideOutfitPicker();
+          window.dispatchEvent(new CustomEvent("tee:bot-match-find-confirmed", { detail: { outfitIndex } }));
+          return;
+        }
+        const ok = await MP.confirmOutfit(outfitIndex);
+        renderOutfitPicker(ok);
+      }
+    });
+    picker.panel.appendChild(confirmBtn);
+
+    let startX = null;
+    stage.addEventListener("pointerdown", (e) => { startX = e.clientX; });
+    stage.addEventListener("pointerup", (e) => {
+      if (startX === null) return;
+      const dx = e.clientX - startX;
+      startX = null;
+      if (Math.abs(dx) > 28) shiftOutfit(dx < 0 ? 1 : -1);
+    });
   }
 
   function renderLobbyContent(view = "main") {
@@ -204,6 +344,7 @@
           const code = await MP.createRoom(name);
           if (code) {
             renderLobbyContentShowRoom(code);
+            showOutfitPicker("friend");
           } else {
             createBtn.disabled = false;
             createBtn.textContent = "Create Room";
@@ -291,6 +432,8 @@
           if (!success) {
             joinBtn.disabled = false;
             joinBtn.textContent = "Join Room";
+          } else {
+            showOutfitPicker("friend");
           }
         } catch (err) {
           joinBtn.disabled = false;
@@ -838,11 +981,22 @@
     if (detail.status === "playing") {
       hideLobbyPanel();
       hideIntroModal();
+      hideOutfitPicker();
+    }
+
+    if (detail.status === "outfit_select") {
+      hideLobbyPanel();
+      hideIntroModal();
+      showOutfitPicker("friend");
+      if (MP.getMode() === "host") {
+        setTimeout(() => MP.maybeAdvanceOutfitSelection && MP.maybeAdvanceOutfitSelection(), 500);
+      }
     }
 
     if (detail.status === "coin_toss") {
       hideLobbyPanel();
       hideIntroModal();
+      hideOutfitPicker();
       // Host triggers the coin toss
       if (MP.getMode() === "host") {
         setTimeout(() => MP.startCoinTossIfHost(), 600);
@@ -916,10 +1070,15 @@
     showLobbyPanel();
   });
 
+  window.addEventListener("tee:open-bot-outfit-picker", () => {
+    showOutfitPicker("bot");
+  });
+
   window.addEventListener("tee:multiplayer-exit", () => {
     hideLobbyPanel();
     if (matchResultOverlay) matchResultOverlay.overlay.classList.remove("visible");
     if (coinTossOverlay) coinTossOverlay.overlay.classList.remove("visible");
+    hideOutfitPicker();
     if (hudEl) hudEl.style.display = "none";
     closeReactTray();
     updateHUD();

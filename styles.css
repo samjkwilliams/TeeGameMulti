@@ -1857,6 +1857,161 @@ body.desktop #game {
   border-top-color: var(--tg-gold-bright);
 }
 
+.outfit-picker-overlay {
+  position: absolute;
+  z-index: 18;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  box-sizing: border-box;
+  background:
+    radial-gradient(circle at 50% 0%, rgb(239 182 78 / 0.2), transparent 34%),
+    linear-gradient(180deg, rgb(4 13 23 / 0.76), rgb(7 20 24 / 0.94));
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.outfit-picker-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.outfit-picker-panel {
+  width: min(100%, 420px);
+  max-height: calc(100vh - 28px);
+  overflow: hidden;
+  padding: 18px;
+  border: 1px solid var(--tg-line-warm);
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.065), transparent 18%),
+    linear-gradient(145deg, rgb(10 28 45 / 0.98), rgb(5 16 28 / 0.98));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 24px 70px rgb(0 0 0 / 0.42);
+  color: var(--tg-cream);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.outfit-picker-logo {
+  width: 118px;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 5px 18px rgb(0 0 0 / 0.36));
+}
+
+.outfit-picker-heading {
+  margin: 0 0 4px;
+  color: var(--tg-gold-bright);
+  font: 950 30px/1 "Avenir Next Condensed", "DIN Condensed", "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
+  text-transform: uppercase;
+}
+
+.outfit-picker-subtitle,
+.outfit-picker-countdown {
+  margin: 0;
+  color: var(--tg-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.outfit-picker-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: 0.72fr 1.2fr 0.72fr;
+  align-items: center;
+  gap: 8px;
+  height: 310px;
+  margin: 12px 0 10px;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.outfit-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  transition: opacity 0.2s ease, transform 0.24s ease;
+}
+
+.outfit-card img {
+  max-width: 100%;
+  max-height: 248px;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 24px rgb(0 0 0 / 0.34));
+  pointer-events: none;
+}
+
+.outfit-card span {
+  margin-top: 6px;
+  color: var(--tg-cream);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.outfit-card-side {
+  opacity: 0.34;
+  transform: scale(0.82);
+}
+
+.outfit-card-active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.outfit-opponent-badge {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  z-index: 1;
+  width: max-content;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgb(239 182 78 / 0.18);
+  color: var(--tg-gold-bright) !important;
+  font-size: 9px !important;
+}
+
+.outfit-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.08);
+  color: var(--tg-cream);
+  font-size: 28px;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+.outfit-arrow-left {
+  left: 4px;
+}
+
+.outfit-arrow-right {
+  right: 4px;
+}
+
+.outfit-confirm-btn {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.outfit-confirm-btn:disabled {
+  opacity: 0.68;
+}
+
 @media (max-width: 390px), (max-height: 760px) {
   .intro-panel {
     gap: 10px;
@@ -1907,6 +2062,18 @@ body.desktop #game {
 
   .stat-value {
     font-size: 18px;
+  }
+
+  .outfit-picker-panel {
+    padding: 14px;
+  }
+
+  .outfit-picker-stage {
+    height: 260px;
+  }
+
+  .outfit-card img {
+    max-height: 205px;
   }
 }
 
