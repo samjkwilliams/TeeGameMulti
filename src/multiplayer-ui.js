@@ -638,8 +638,23 @@
     if (!reactTrayEl || !reactBtnEl || !hudEl) return;
     const btnRect = reactBtnEl.getBoundingClientRect();
     const hudRect = hudEl.getBoundingClientRect();
-    reactTrayEl.style.top = (btnRect.top - hudRect.top - reactTrayEl.offsetHeight - 8) + "px";
-    reactTrayEl.style.left = (btnRect.left - hudRect.left + btnRect.width / 2 - reactTrayEl.offsetWidth / 2) + "px";
+    const wrapperRect = document.querySelector(".game-wrapper")?.getBoundingClientRect();
+    const trayWidth = reactTrayEl.offsetWidth;
+    const trayHeight = reactTrayEl.offsetHeight;
+    const margin = 8;
+    let left = btnRect.left - hudRect.left + btnRect.width / 2 - trayWidth / 2;
+    let top = btnRect.top - hudRect.top - trayHeight - 8;
+
+    if (wrapperRect) {
+      const minLeft = wrapperRect.left - hudRect.left + margin;
+      const maxLeft = wrapperRect.right - hudRect.left - trayWidth - margin;
+      const minTop = wrapperRect.top - hudRect.top + margin;
+      left = Math.max(minLeft, Math.min(left, maxLeft));
+      top = Math.max(minTop, top);
+    }
+
+    reactTrayEl.style.top = top + "px";
+    reactTrayEl.style.left = left + "px";
   }
 
   function closeReactTray() {

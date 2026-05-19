@@ -1182,6 +1182,11 @@ body.desktop #game {
     font-size: 20px;
   }
 
+  .mp-react-tray {
+    gap: 3px;
+    padding: 7px 9px;
+  }
+
   .mp-panel {
     padding: 20px 16px;
     max-width: 360px;
