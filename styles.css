@@ -1397,7 +1397,12 @@ body.desktop #game {
 .intro-overlay,
 .hole-advance-overlay {
   align-items: center;
-  padding: 12px;
+  padding: 12px 12px 24px;
+}
+
+.intro-overlay {
+  align-items: start;
+  padding-top: 68px;
 }
 
 .intro-panel,
